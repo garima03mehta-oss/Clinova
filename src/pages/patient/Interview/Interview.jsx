@@ -4,20 +4,20 @@ import { getCompletenessScore } from "../../../utils/completenessScore";
 import { checkPriority } from "../../../utils/priorityEngine";
 
 export default function Interview() {
+  const navigate = useNavigate();
+
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [answers, setAnswers] = useState({});
+  const [textInput, setTextInput] = useState("");
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [priorityAlert, setPriorityAlert] = useState(null);
+
   const [currentQuestion, setCurrentQuestion] = useState({
     type: "text",
     question: "What symptoms are you facing?",
     key: "chiefComplaint",
   });
-
-  const [priorityAlert, setPriorityAlert] = useState(null);
-  const [textInput, setTextInput] = useState("");
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
 
   const completeness = getCompletenessScore({
     chiefComplaint,
@@ -25,27 +25,30 @@ export default function Interview() {
     adaptiveAnswers: answers,
   });
 
-  // Send the patient's information to Gemini
-  const askGemini = async (symptomText, history) => {
+  // Ask Gemini for the next relevant question
+  const askGemini = async (latestAnswer, history) => {
     setLoading(true);
+    setSelectedAnswer(null);
 
     try {
-      const response = await fetch("/api/get-adaptive-question", {
+      const response = await fetch("/api/getAdaptiveQuestion", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          symptomText,
+          symptomText: latestAnswer,
           history,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get questions from Gemini");
-      };
+        throw new Error("Failed to get adaptive question");
+      }
 
       const data = await response.json();
+
+      console.log("Gemini response:", data);
 
       if (data.chiefComplaint && !chiefComplaint) {
         setChiefComplaint(data.chiefComplaint);
@@ -55,44 +58,48 @@ export default function Interview() {
         Array.isArray(data.followUpQuestions) &&
         data.followUpQuestions.length > 0
       ) {
-        const next = data.followUpQuestions[0];
+        const nextQuestion = data.followUpQuestions[0];
 
         setCurrentQuestion({
-          type: "yesno",
-          question: next.question,
-          key: next.key,
+          type: nextQuestion.type || "text",
+          question: nextQuestion.question,
+          key: nextQuestion.key,
         });
 
-        setSelectedAnswer(null);
-      } else {
-        setCurrentQuestion({
-          type: "complete",
-          question:
-            "Thank you. We have collected the available information.",
-        });
+        return;
       }
+
+      // Gemini says enough information has been collected
+      setCurrentQuestion({
+        type: "complete",
+        question:
+          "Thank you. We have collected enough information for the initial history.",
+      });
     } catch (error) {
       console.error("Gemini error:", error);
 
+      // Do NOT repeatedly ask "provide more information".
+      // Instead, finish the interview if Gemini/API fails.
       setCurrentQuestion({
-        type: "text",
+        type: "complete",
         question:
-          "Please provide any other details about your symptoms.",
-        key: "additionalDetails",
+          "We have collected the available information for the initial history.",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // Select Yes or No without immediately moving forward
+  // Select Yes/No answer
   const handleYesNoSelect = (value) => {
     setSelectedAnswer(value);
   };
 
-  // Continue after answering a Yes/No question
+  // Continue after Yes/No question
   const handleYesNoContinue = async () => {
-    if (selectedAnswer === null || loading) return;
+    if (selectedAnswer === null || loading) {
+      return;
+    }
 
     const updatedAnswers = {
       ...answers,
@@ -102,7 +109,8 @@ export default function Interview() {
     setAnswers(updatedAnswers);
 
     const priority = checkPriority({
-      chestPain: chiefComplaint === "chest pain",
+      chestPain:
+        chiefComplaint.toLowerCase().includes("chest pain"),
       ...updatedAnswers,
     });
 
@@ -110,17 +118,22 @@ export default function Interview() {
       setPriorityAlert(priority.reason);
     }
 
-    await askGemini(chiefComplaint, {
-      chiefComplaint,
-      ...updatedAnswers,
-    });
+    await askGemini(
+      String(selectedAnswer),
+      {
+        chiefComplaint,
+        ...updatedAnswers,
+      }
+    );
   };
 
-  // Continue after a text answer
+  // Continue after text question
   const handleTextSubmit = async () => {
     const answer = textInput.trim();
 
-    if (!answer || loading) return;
+    if (!answer || loading) {
+      return;
+    }
 
     const updatedAnswers = {
       ...answers,
@@ -130,24 +143,26 @@ export default function Interview() {
     setAnswers(updatedAnswers);
     setTextInput("");
 
-    // First response is the patient's main complaint
+    // First answer = main complaint
     if (!chiefComplaint) {
       setChiefComplaint(answer);
 
       await askGemini(answer, {
-        ...updatedAnswers,
         chiefComplaint: answer,
+        ...updatedAnswers,
       });
 
       return;
     }
 
-    await askGemini(chiefComplaint, {
+    // Send latest answer + complete history to Gemini
+    await askGemini(answer, {
       chiefComplaint,
       ...updatedAnswers,
     });
   };
 
+  // Finish interview
   const handleComplete = () => {
     navigate("/documents");
   };
@@ -168,7 +183,7 @@ export default function Interview() {
           />
         </div>
 
-        {/* Priority alert */}
+        {/* Priority Alert */}
         {priorityAlert && (
           <div className="bg-red-50 border border-danger rounded-xl p-3 mb-4">
             <p className="text-danger text-sm font-medium">
@@ -177,23 +192,48 @@ export default function Interview() {
           </div>
         )}
 
-        {/* Question */}
+        {/* Current Question */}
         <p className="font-display text-xl text-text mb-6">
           {currentQuestion.question}
         </p>
 
         {/* Loading */}
         {loading && (
-          <p className="text-sm text-text-muted mb-4">
-            Preparing your next question...
-          </p>
+          <div className="text-center py-4">
+            <p className="text-sm text-text-muted">
+              Preparing your next question...
+            </p>
+          </div>
         )}
 
-        {/* Yes / No */}
-        {currentQuestion.type === "yesno" && !loading && (
+        {/* TEXT QUESTION */}
+        {!loading && currentQuestion.type === "text" && (
+          <div>
+            <textarea
+              value={textInput}
+              onChange={(event) => setTextInput(event.target.value)}
+              placeholder="Type your answer here..."
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4"
+              rows={4}
+            />
+
+            <button
+              type="button"
+              onClick={handleTextSubmit}
+              disabled={!textInput.trim()}
+              className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 disabled:opacity-40"
+            >
+              Continue
+            </button>
+          </div>
+        )}
+
+        {/* YES / NO QUESTION */}
+        {!loading && currentQuestion.type === "yesno" && (
           <div>
             <div className="flex gap-3 mb-4">
               <button
+                type="button"
                 onClick={() => handleYesNoSelect(true)}
                 className={`flex-1 py-3 rounded-xl border-2 ${
                   selectedAnswer === true
@@ -205,6 +245,7 @@ export default function Interview() {
               </button>
 
               <button
+                type="button"
                 onClick={() => handleYesNoSelect(false)}
                 className={`flex-1 py-3 rounded-xl border-2 ${
                   selectedAnswer === false
@@ -217,39 +258,20 @@ export default function Interview() {
             </div>
 
             <button
-              disabled={selectedAnswer === null}
+              type="button"
               onClick={handleYesNoContinue}
-              className="w-full bg-primary text-white py-3 rounded-xl disabled:opacity-40"
+              disabled={selectedAnswer === null}
+              className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 disabled:opacity-40"
             >
               Continue
             </button>
           </div>
         )}
 
-        {/* Text answer */}
-        {currentQuestion.type === "text" && !loading && (
-          <div>
-            <textarea
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder="Type your answer here..."
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4"
-              rows={4}
-            />
-
-            <button
-              disabled={!textInput.trim()}
-              onClick={handleTextSubmit}
-              className="w-full bg-primary text-white py-3 rounded-xl disabled:opacity-40"
-            >
-              Continue
-            </button>
-          </div>
-        )}
-
-        {/* Completed */}
-        {currentQuestion.type === "complete" && !loading && (
+        {/* COMPLETE */}
+        {!loading && currentQuestion.type === "complete" && (
           <button
+            type="button"
             onClick={handleComplete}
             className="w-full bg-primary text-white py-3 rounded-xl"
           >

@@ -1,4 +1,3 @@
-```js
 export function getCompletenessScore(history = {}) {
   const sections = [
     "chiefComplaint",
@@ -30,4 +29,3 @@ export function getCompletenessScore(history = {}) {
 
   return Math.min(Math.round(coreScore + adaptiveScore), 100);
 }
-```
