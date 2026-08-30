@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { generateAccessCode } from "../../utils/accessCode";
-
 export default function ShareAccess() {
   const [scope, setScope] = useState({ clinicalSummary: true, timeline: true, reports: false });
   const [duration, setDuration] = useState(60);
