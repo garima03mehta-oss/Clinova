@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+fix/gemini-context-and-min-questions
 import { extractDocumentInfo, explainDocument } from "../../../utils/documentExtraction";
 import StatusBadge from "../../../components/StatusBadge";
+import { extractDocumentInfo, explainDocument } from "../../../Utils/documentExtraction"
+main
 
 export default function DocumentUpload() {
   const [fileName, setFileName] = useState(null);
@@ -16,6 +19,7 @@ export default function DocumentUpload() {
     }
   };
 
+fix/gemini-context-and-min-questions
   const handleVerify = () => setExtracted({ ...extracted, status: "VERIFIED" });
   const handleContinue = () => navigate("/timeline");
 
@@ -67,6 +71,35 @@ export default function DocumentUpload() {
           Continue
         </button>
       </div>
+
+  const handleVerify = () => {
+    setExtracted({ ...extracted, status: "VERIFIED" });
+  };
+
+  const handleContinue = () => {
+    navigate("/timeline");
+  };
+
+  return (
+    <div style={{ textAlign: "center", marginTop: "100px" }}>
+      <h1>Upload Your Medical Documents</h1>
+      <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
+      {fileName && <p>Selected: {fileName}</p>}
+      {extracted && (
+        <div>
+          <p style={{ color: extracted.status === "DRAFT" ? "orange" : "green" }}>
+            Status: {extracted.status === "DRAFT" ? "AI Draft — Unverified" : "Verified"}
+          </p>
+          <p>Type: {extracted.documentType}</p>
+          <p>Date: {extracted.date}</p>
+          <p>Hospital: {extracted.hospital}</p>
+          <p style={{ fontSize: "12px", color: "gray" }}>{explainDocument(extracted)}</p>
+          {extracted.status === "DRAFT" && <button onClick={handleVerify}>Confirm This Is Correct</button>}
+        </div>
+      )}
+      <br />
+      <button disabled={!extracted || extracted.status !== "VERIFIED"} onClick={handleContinue}>Continue</button>
+ main
     </div>
   );
 }
