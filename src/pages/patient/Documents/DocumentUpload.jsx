@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { extractDocumentInfo, explainDocument } from "../../../Utils/documentationExtraction";
-
+import {
+  extractDocumentInfo,
+  explainDocument
+} from "../../../utils/documentExtraction";
 export default function DocumentUpload() {
   const [fileName, setFileName] = useState(null);
   const [extracted, setExtracted] = useState(null);
