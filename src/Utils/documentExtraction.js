@@ -11,7 +11,7 @@ export function extractDocumentInfo(fileName) {
     status: "DRAFT"
   };
 }
-import {
-  extractDocumentInfo,
-  explainDocument
-} from "../../../utils/documentationExtraction";
+
+export function explainDocument(extracted) {
+  return `This ${extracted.documentType} was uploaded. AI-generated explanation — please discuss with your doctor.`;
+}
