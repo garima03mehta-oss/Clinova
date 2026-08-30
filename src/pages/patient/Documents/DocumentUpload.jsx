@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { extractDocumentInfo, explainDocument } from "../../../utils/documentExtraction";
-import StatusBadge from "../../../components/StatusBadge";
+import { extractDocumentInfo, explainDocument } from "../../../utils/documentExtraction.js";
+import StatusBadge from "../../../components/StatusBadge.jsx";
 
 export default function DocumentUpload() {
   const [fileName, setFileName] = useState(null);
