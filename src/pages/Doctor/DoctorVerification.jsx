@@ -15,14 +15,17 @@ export default function DoctorVerification() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>Doctor Verification</h1>
-      <p style={{ color: status === "DRAFT" ? "orange" : "green" }}>
-        Status: {status === "DRAFT" ? "AI Draft — Unverified" : "Official Clinical Record — Verified"}
-      </p>
-      <p>Review the clinical summary before confirming it as the official record.</p>
-      {status === "DRAFT" && <button onClick={handleVerify}>Verify & Make Official</button>}
-      {status === "VERIFIED" && <p>This record is now official and saved.</p>}
-    </div>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body">
+  <div className="bg-surface rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md text-center">
+    <StatusBadge status={status} label={status === "DRAFT" ? "AI-Generated Clinical Draft" : "Official Clinical Record"} />
+    <p className="text-text-muted text-sm mt-4">Review the clinical summary before confirming it as the official record.</p>
+    {status === "DRAFT" && (
+      <button onClick={handleVerify} className="mt-6 w-full bg-primary text-white py-3 rounded-xl">
+        Verify & Make Official
+      </button>
+    )}
+    {status === "VERIFIED" && <p className="text-success mt-4 font-medium">✓ Saved as official record</p>}
+  </div>
+</div>
   );
 }

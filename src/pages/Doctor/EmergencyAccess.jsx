@@ -24,20 +24,15 @@ export default function EmergencyAccess() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1 style={{ color: "red" }}>🚨 EMERGENCY ACCESS</h1>
-      <p>This bypasses normal patient sharing and shows only minimum necessary information for urgent care. This access is time-limited and fully logged.</p>
-      <input placeholder="Reason for emergency access" value={reason} onChange={(e) => setReason(e.target.value)} />
-      <br /><br />
-      <button onClick={handleActivate} disabled={!reason}>Activate Emergency Access</button>
-      {session && (
-        <div>
-          <p style={{ color: "red", fontWeight: "bold" }}>EMERGENCY ACCESS ACTIVE — expires in 15 minutes</p>
-          <p>Allergy History: {dummyEmergencyData.allergyHistory}</p>
-          <p>Priority Flags: {dummyEmergencyData.priorityFlags}</p>
-          <p>Chief Complaint: {dummyEmergencyData.chiefComplaint}</p>
-        </div>
-      )}
-    </div>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-red-50 font-body text-center">
+  <div className="bg-surface border-2 border-danger rounded-2xl p-8 max-w-md shadow-sm">
+    <StatusBadge status="EMERGENCY" label="🚨 EMERGENCY ACCESS" />
+    <p className="text-text-muted text-sm mt-4">Minimum necessary information only. Time-limited. Fully logged.</p>
+    <input placeholder="Reason for emergency access" value={reason} onChange={(e) => setReason(e.target.value)} className="mt-4 w-full border border-gray-300 rounded-xl px-4 py-3" />
+    <button onClick={handleActivate} disabled={!reason} className="mt-4 w-full bg-danger text-white py-3 rounded-xl disabled:opacity-40">
+      Activate Emergency Access
+    </button>
+  </div>
+</div>
   );
 }
