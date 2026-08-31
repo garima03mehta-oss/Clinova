@@ -1,5 +1,3 @@
-// src/pages/patient/PreReport.jsx
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -35,20 +33,11 @@ export default function PreReport() {
       setError("");
       setReport("");
 
-      /*
-       * Interview information
-       */
       const history = getLocalStorageData(
         "clinovaInterviewHistory",
         {}
       );
 
-      /*
-       * Documents are OPTIONAL.
-       *
-       * If patient has not uploaded any document,
-       * an empty array will be sent.
-       */
       const documents = getLocalStorageData(
         "clinovaDocuments",
         []
@@ -59,11 +48,6 @@ export default function PreReport() {
         documents,
       });
 
-      /*
-       * IMPORTANT:
-       * Documents are optional.
-       * Pre-report should work even when documents = [].
-       */
       const response = await fetch(
         "/api/generatePreReport",
         {
@@ -98,11 +82,18 @@ export default function PreReport() {
       }
 
       setReport(data.report);
-    } catch (err) {
-      console.error(
-        "Pre-report error:",
-        err
+
+      /*
+       * Save the generated report locally.
+       * This allows ShareAccess / other pages
+       * to access the latest report.
+       */
+      localStorage.setItem(
+        "clinovaPreReport",
+        data.report
       );
+    } catch (err) {
+      console.error("Pre-report error:", err);
 
       setError(
         err?.message ||
@@ -113,9 +104,31 @@ export default function PreReport() {
     }
   };
 
-  /* =========================
-     LOADING SCREEN
-  ========================= */
+  const goToDashboard = () => {
+    navigate("/patient/dashboard");
+  };
+
+  const goToDocuments = () => {
+    localStorage.setItem(
+      "clinovaDocumentFlow",
+      "dashboard"
+    );
+
+    navigate("/documents");
+  };
+
+  const shareWithDoctor = () => {
+    /*
+     * Tell ShareAccess that user came
+     * from generated report.
+     */
+    localStorage.setItem(
+      "clinovaShareSource",
+      "pre-report"
+    );
+
+    navigate("/share-access");
+  };
 
   if (loading) {
     return (
@@ -167,10 +180,9 @@ export default function PreReport() {
               margin: 0,
             }}
           >
-            Clinova is organizing your
-            interview responses
-            {` `}
-            {`and any available medical records.`}
+            Clinova is organizing your interview
+            responses and any available medical
+            records.
           </p>
 
           <div
@@ -187,10 +199,6 @@ export default function PreReport() {
       </div>
     );
   }
-
-  /* =========================
-     ERROR SCREEN
-  ========================= */
 
   if (error) {
     return (
@@ -250,9 +258,9 @@ export default function PreReport() {
               color: "#6B7280",
             }}
           >
-            You can try generating the report
-            again. A medical document is optional
-            and is not required to generate the
+            You can try generating the report again.
+            A medical document is optional and is not
+            required to generate the
             pre-consultation report.
           </div>
 
@@ -264,8 +272,6 @@ export default function PreReport() {
               flexWrap: "wrap",
             }}
           >
-            {/* TRY AGAIN */}
-
             <button
               onClick={generateReport}
               style={{
@@ -281,16 +287,11 @@ export default function PreReport() {
               🔄 Try Again
             </button>
 
-            {/* ADD DOCUMENT */}
-
             <button
-              onClick={() =>
-                navigate("/documents")
-              }
+              onClick={goToDocuments}
               style={{
                 padding: "13px 20px",
-                border:
-                  "1px solid #0E6E64",
+                border: "1px solid #0E6E64",
                 borderRadius: "10px",
                 background: "#FFFFFF",
                 color: "#0E6E64",
@@ -301,16 +302,11 @@ export default function PreReport() {
               📄 Add Document
             </button>
 
-            {/* DASHBOARD */}
-
             <button
-              onClick={() =>
-                navigate("/patient")
-              }
+              onClick={goToDashboard}
               style={{
                 padding: "13px 20px",
-                border:
-                  "1px solid #D1D5DB",
+                border: "1px solid #D1D5DB",
                 borderRadius: "10px",
                 background: "#FFFFFF",
                 color: "#374151",
@@ -325,10 +321,6 @@ export default function PreReport() {
       </div>
     );
   }
-
-  /* =========================
-     REPORT SCREEN
-  ========================= */
 
   return (
     <div
@@ -350,13 +342,10 @@ export default function PreReport() {
             "0 4px 20px rgba(0,0,0,0.06)",
         }}
       >
-        {/* HEADER */}
-
         <div
           style={{
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "flex-start",
             gap: "15px",
             flexWrap: "wrap",
@@ -391,10 +380,9 @@ export default function PreReport() {
                 lineHeight: 1.5,
               }}
             >
-              A structured summary of the
-              information provided during your
-              clinical interview and available
-              medical records.
+              A structured summary of the information
+              provided during your clinical interview
+              and available medical records.
             </p>
           </div>
 
@@ -413,16 +401,13 @@ export default function PreReport() {
           </span>
         </div>
 
-        {/* REPORT */}
-
         <div
           style={{
             marginTop: "28px",
             padding: "24px",
             borderRadius: "14px",
             background: "#F9FAFB",
-            border:
-              "1px solid #E5E7EB",
+            border: "1px solid #E5E7EB",
             whiteSpace: "pre-wrap",
             lineHeight: 1.7,
             color: "#374151",
@@ -431,49 +416,42 @@ export default function PreReport() {
           {report}
         </div>
 
-        {/* DISCLAIMER */}
-
         <div
           style={{
             marginTop: "22px",
             padding: "16px",
             borderRadius: "12px",
             background: "#FFF7ED",
-            border:
-              "1px solid #FED7AA",
+            border: "1px solid #FED7AA",
             color: "#9A3412",
             lineHeight: 1.5,
             fontSize: "13px",
           }}
         >
           <strong>Important:</strong>{" "}
-          This is an AI-generated draft based
-          only on the information provided. It is
-          not a diagnosis or a treatment
-          recommendation and should be reviewed
-          by a qualified healthcare professional.
+          This is an AI-generated draft based only on
+          the information provided. It is not a
+          diagnosis or a treatment recommendation and
+          should be reviewed by a qualified healthcare
+          professional.
         </div>
 
-        {/* ACTIONS */}
+        {/* ACTION BUTTONS */}
 
         <div
           style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(200px, 1fr))",
             gap: "12px",
             marginTop: "22px",
-            flexWrap: "wrap",
           }}
         >
           <button
-            onClick={() =>
-              navigate("/documents")
-            }
+            onClick={goToDocuments}
             style={{
-              flex: 1,
-              minWidth: "200px",
               padding: "14px",
-              border:
-                "1px solid #0E6E64",
+              border: "1px solid #0E6E64",
               borderRadius: "12px",
               background: "#FFFFFF",
               color: "#0E6E64",
@@ -486,12 +464,8 @@ export default function PreReport() {
           </button>
 
           <button
-            onClick={() =>
-              navigate("/patient")
-            }
+            onClick={shareWithDoctor}
             style={{
-              flex: 1,
-              minWidth: "200px",
               padding: "14px",
               border: "none",
               borderRadius: "12px",
@@ -502,9 +476,39 @@ export default function PreReport() {
               cursor: "pointer",
             }}
           >
-            🏠 Back to Patient Dashboard
+            🔐 Share with Doctor
+          </button>
+
+          <button
+            onClick={goToDashboard}
+            style={{
+              padding: "14px",
+              border: "1px solid #D1D5DB",
+              borderRadius: "12px",
+              background: "#FFFFFF",
+              color: "#374151",
+              fontSize: "15px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            🏠 Back to Dashboard
           </button>
         </div>
+
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: "22px",
+            color: "#6B7280",
+            fontSize: "12px",
+            lineHeight: 1.5,
+          }}
+        >
+          Your report is a preliminary AI-generated
+          draft. Please have it reviewed by a qualified
+          healthcare professional.
+        </p>
       </div>
     </div>
   );
