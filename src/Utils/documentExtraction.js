@@ -1,40 +1,108 @@
-const referenceRanges = {
-  Hemoglobin: { low: 12, high: 16, unit: "g/dL" },
-  WBC: { low: 4000, high: 11000, unit: "/µL" },
-  Platelets: { low: 150000, high: 450000, unit: "/µL" }
-};
+// src/utils/documentExtraction.js
 
-function flagValue(name, value) {
-  const range = referenceRanges[name];
-  if (!range || value === null) return "Not clearly identified";
-  if (value < range.low) return "Low";
-  if (value > range.high) return "High";
-  return "Normal";
-}
+export async function extractDocumentInfo(file) {
+  if (!file) {
+    throw new Error("Please select a medical document.");
+  }
 
-export function extractDocumentInfo(fileName) {
-  const isLabReport = fileName.toLowerCase().includes("report") || fileName.toLowerCase().includes("blood");
+  if (!(file instanceof File)) {
+    throw new Error("Invalid file selected.");
+  }
 
-  const investigations = isLabReport
-    ? [
-        { name: "Hemoglobin", value: 10.8, unit: "g/dL" },
-        { name: "WBC", value: 8200, unit: "/µL" },
-        { name: "Platelets", value: 120000, unit: "/µL" }
-      ].map((inv) => ({ ...inv, flag: flagValue(inv.name, inv.value) }))
-    : [];
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/documentExtraction", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error(
+      "Document extraction API error:",
+      data
+    );
+
+    throw new Error(
+      data.error ||
+        "Unable to analyze the medical document."
+    );
+  }
 
   return {
-    date: "Not clearly identified",
-    hospital: "Not clearly identified",
-    documentType: isLabReport ? "Laboratory Report" : "Not clearly identified",
-    investigations,
-    medication: "Not provided",
-    diagnosis: "Not provided",
-    source: "DOCUMENT EXTRACTED",
-    status: "DRAFT"
+    documentType:
+      data.documentType || "Medical Document",
+
+    date:
+      data.date || "Not clearly identified",
+
+    hospital:
+      data.hospital || "Not clearly identified",
+
+    doctor:
+      data.doctor || "",
+
+    patientName:
+      data.patientName || "",
+
+    clinicalIndication:
+      data.clinicalIndication || "",
+
+    investigations:
+      Array.isArray(data.investigations)
+        ? data.investigations
+        : [],
+
+    findings:
+      Array.isArray(data.findings)
+        ? data.findings
+        : [],
+
+    impression:
+      data.impression || "",
+
+    medications:
+      Array.isArray(data.medications)
+        ? data.medications
+        : [],
+
+    diagnosis:
+      Array.isArray(data.diagnosis)
+        ? data.diagnosis
+        : [],
+
+    recommendations:
+      Array.isArray(data.recommendations)
+        ? data.recommendations
+        : [],
+
+    otherInformation:
+      Array.isArray(data.otherInformation)
+        ? data.otherInformation
+        : [],
+
+    aiExplanation:
+      data.aiExplanation ||
+      "The extracted information is an AI-generated draft and should be verified by a qualified healthcare professional.",
+
+    status: "DRAFT",
+
+    source: "GEMINI_DOCUMENT_EXTRACTION",
   };
 }
 
 export function explainDocument(extracted) {
-  return `This ${extracted.documentType} was uploaded. AI-generated explanation — please discuss with your doctor.`;
+  if (!extracted) {
+    return "No document information is available.";
+  }
+
+  if (extracted.aiExplanation) {
+    return extracted.aiExplanation;
+  }
+
+  return `Clinova identified this as a ${
+    extracted.documentType || "medical document"
+  }. The extracted information is an AI-generated draft and should be verified by a qualified healthcare professional.`;
 }
