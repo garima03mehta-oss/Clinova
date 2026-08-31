@@ -48,8 +48,7 @@ export default function DoctorRegister() {
       localStorage.setItem("clinovaDoctorId", doctorId);
 
       // Doctor can continue to the existing access-code workflow
-      navigate("/doctor/enter-code");
-    } catch (err) {
+navigate("/doctor/dashboard");    } catch (err) {
       if (err.code === "auth/email-already-in-use") {
         setError(
           "An account with this email already exists. Please login."
