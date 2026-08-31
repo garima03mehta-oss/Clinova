@@ -1,100 +1,159 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, setDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { db, auth } from "../../firebase/config";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../firebase/config";
 
 export default function PatientLogin() {
-  const [method, setMethod] = useState(null);
-  const [abhaId, setAbhaId] = useState("");
-  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  const isValidAbhaFormat = (id) => /^\d{2}-\d{4}-\d{4}-\d{4}$/.test(id);
+  const handleLogin = async () => {
+    setError("");
 
-  const handleAbhaContinue = async () => {
-    if (!isValidAbhaFormat(abhaId)) {
-      setError("Enter a valid ABHA ID in the format XX-XXXX-XXXX-XXXX");
-      return;
-    }
-    await setDoc(doc(db, "patients", abhaId), { patientId: abhaId, loginMethod: "abha", createdAt: Date.now() }, { merge: true });
-    localStorage.setItem("clinovaPatientId", abhaId);
-    navigate("/welcome");
-  };
-
-  const handlePhoneContinue = async () => {
-    if (!phone) {
-      setError("Enter your phone number");
-      return;
-    }
-    await setDoc(doc(db, "patients", phone), { patientId: phone, loginMethod: "phone", createdAt: Date.now() }, { merge: true });
-    localStorage.setItem("clinovaPatientId", phone);
-    navigate("/welcome");
-  };
-
-  const handleEmailContinue = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setError("Email and password are required.");
       return;
     }
+
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      localStorage.setItem("clinovaPatientId", result.user.uid);
-      navigate("/welcome");
+      setLoading(true);
+
+      // Firebase Authentication verifies that the account exists
+      const result = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
+      const patientId = result.user.uid;
+
+      // Check the patient's Firestore profile
+      const patientRef = doc(db, "patients", patientId);
+      const patientSnap = await getDoc(patientRef);
+
+      if (!patientSnap.exists()) {
+        setError(
+          "Patient profile not found. Please contact support."
+        );
+        return;
+      }
+
+      const patientData = patientSnap.data();
+
+      localStorage.setItem("clinovaPatientId", patientId);
+
+      // Save profile locally if it already exists
+      if (
+        patientData.name ||
+        patientData.age ||
+        patientData.phone
+      ) {
+        localStorage.setItem(
+          "clinovaPatient",
+          JSON.stringify({
+            name: patientData.name || "",
+            age: patientData.age || "",
+            phone: patientData.phone || "",
+          })
+        );
+      }
+
+      // If details were already completed → Dashboard
+      if (patientData.profileComplete === true) {
+        navigate("/patient/dashboard");
+      } else {
+        // First-time patient → onboarding
+        navigate("/welcome");
+      }
     } catch (err) {
-      setError(err.message);
+      if (
+        err.code === "auth/invalid-credential" ||
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password"
+      ) {
+        setError("Invalid email or password.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Please enter a valid email address.");
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!method) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body">
-        <h1 className="font-display text-2xl text-text mb-6">Patient Login</h1>
-        <div className="flex flex-col gap-3 w-full max-w-sm">
-          <button onClick={() => setMethod("abha")} className="bg-primary text-white py-3 rounded-xl">Login with ABHA ID</button>
-          <button onClick={() => setMethod("phone")} className="bg-surface border-2 border-primary text-primary py-3 rounded-xl">Continue with Phone Number</button>
-          <button onClick={() => setMethod("email")} className="bg-surface border-2 border-gray-300 text-text-muted py-3 rounded-xl">Continue with Email</button>
-        </div>
-        <p className="text-text-muted text-sm mt-6">
-          New Patient? <span className="text-primary cursor-pointer" onClick={() => navigate("/patient/register")}>Register</span>
-        </p>
-      </div>
-    );
-  }
-
-  if (method === "abha") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body text-center">
-        <h1 className="font-display text-2xl text-text mb-2">Login with ABHA ID</h1>
-        <p className="text-text-muted text-xs mb-4">ABDM-readiness simulation — not connected to live ABHA verification.</p>
-        <input placeholder="XX-XXXX-XXXX-XXXX" value={abhaId} onChange={(e) => setAbhaId(e.target.value)} className="border border-gray-300 rounded-xl px-4 py-3 w-full max-w-sm mb-3" />
-        <button onClick={handleAbhaContinue} className="bg-primary text-white py-3 rounded-xl w-full max-w-sm">Continue</button>
-        {error && <p className="text-danger text-sm mt-3">{error}</p>}
-      </div>
-    );
-  }
-
-  if (method === "phone") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body text-center">
-        <h1 className="font-display text-2xl text-text mb-4">Continue with Phone Number</h1>
-        <input placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} className="border border-gray-300 rounded-xl px-4 py-3 w-full max-w-sm mb-3" />
-        <button onClick={handlePhoneContinue} className="bg-primary text-white py-3 rounded-xl w-full max-w-sm">Continue</button>
-        {error && <p className="text-danger text-sm mt-3">{error}</p>}
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body text-center">
-      <h1 className="font-display text-2xl text-text mb-4">Continue with Email</h1>
-      <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="border border-gray-300 rounded-xl px-4 py-3 w-full max-w-sm mb-3" />
-      <input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="border border-gray-300 rounded-xl px-4 py-3 w-full max-w-sm mb-3" />
-      <button onClick={handleEmailContinue} className="bg-primary text-white py-3 rounded-xl w-full max-w-sm">Continue</button>
-      {error && <p className="text-danger text-sm mt-3">{error}</p>}
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body">
+      <div className="w-full max-w-sm bg-surface rounded-2xl shadow-sm border border-gray-100 p-8">
+
+        <div className="text-center mb-7">
+          <h1 className="font-display text-2xl font-semibold text-text">
+            Patient Login
+          </h1>
+
+          <p className="text-text-muted text-sm mt-2">
+            Sign in to access your Clinova health dashboard
+          </p>
+        </div>
+
+        <label className="block text-sm font-medium text-text mb-2">
+          Email
+        </label>
+
+        <input
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 outline-none focus:border-primary"
+        />
+
+        <label className="block text-sm font-medium text-text mb-2">
+          Password
+        </label>
+
+        <input
+          type="password"
+          placeholder="Your password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleLogin();
+          }}
+          className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 outline-none focus:border-primary"
+        />
+
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-primary text-white py-3 rounded-xl font-medium disabled:opacity-60"
+        >
+          {loading ? "Signing in..." : "Login"}
+        </button>
+
+        {error && (
+          <p className="text-danger text-sm mt-4 text-center">
+            {error}
+          </p>
+        )}
+
+        <p className="text-text-muted text-sm mt-5 text-center">
+          New Patient?{" "}
+          <button
+            type="button"
+            className="text-primary font-medium"
+            onClick={() => navigate("/patient/register")}
+          >
+            Create Account
+          </button>
+        </p>
+
+      </div>
     </div>
   );
 }
