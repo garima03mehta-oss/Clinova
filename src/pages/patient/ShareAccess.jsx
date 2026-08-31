@@ -26,7 +26,9 @@ export default function ShareAccess() {
     const patientId = localStorage.getItem("clinovaPatientId");
 
     if (!patientId) {
-      setError("Patient information not found. Please log in again.");
+      setError(
+        "Patient information not found. Please log in again."
+      );
       return;
     }
 
@@ -35,15 +37,21 @@ export default function ShareAccess() {
       !scope.timeline &&
       !scope.reports
     ) {
-      setError("Please select at least one item to share.");
+      setError(
+        "Please select at least one item to share."
+      );
       return;
     }
 
     setLoading(true);
     setError("");
+    setAccess(null);
 
     try {
-      const newAccess = generateAccessCode(scope, duration);
+      const newAccess = generateAccessCode(
+        scope,
+        duration
+      );
 
       const docRef = await addDoc(
         collection(db, "accessRequests"),
@@ -59,7 +67,11 @@ export default function ShareAccess() {
         id: docRef.id,
       });
     } catch (err) {
-      console.error("Access generation error:", err);
+      console.error(
+        "Access generation error:",
+        err
+      );
+
       setError(
         err?.message ||
           "Unable to generate secure doctor access."
@@ -70,7 +82,6 @@ export default function ShareAccess() {
   };
 
   return (
-fix/gemini-context-and-min-questions
     <div
       style={{
         minHeight: "100vh",
@@ -86,14 +97,18 @@ fix/gemini-context-and-min-questions
           background: "#FFFFFF",
           padding: "32px",
           borderRadius: "20px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+          boxShadow:
+            "0 4px 20px rgba(0,0,0,0.06)",
         }}
       >
+        {/* HEADER */}
+
         <p
           style={{
             color: "#0E6E64",
             fontWeight: "700",
             fontSize: "13px",
+            marginBottom: "8px",
           }}
         >
           CLINOVA • SECURE SHARING
@@ -102,6 +117,7 @@ fix/gemini-context-and-min-questions
         <h1
           style={{
             color: "#1F2937",
+            margin: 0,
             marginBottom: "10px",
           }}
         >
@@ -112,16 +128,36 @@ fix/gemini-context-and-min-questions
           style={{
             color: "#6B7280",
             lineHeight: 1.6,
+            marginTop: 0,
           }}
         >
-          Choose which parts of your medical information you
-          want to share with your doctor.
+          Choose which parts of your medical
+          information you want to share with
+          your doctor.
         </p>
 
-        <div style={{ marginTop: "25px" }}>
-          <h3>Information to share</h3>
+        {/* INFORMATION TO SHARE */}
 
-          <label style={{ display: "block", marginTop: "12px" }}>
+        <div
+          style={{
+            marginTop: "25px",
+          }}
+        >
+          <h3
+            style={{
+              color: "#1F2937",
+            }}
+          >
+            Information to share
+          </h3>
+
+          <label
+            style={{
+              display: "block",
+              marginTop: "14px",
+              color: "#374151",
+            }}
+          >
             <input
               type="checkbox"
               checked={scope.clinicalSummary}
@@ -132,58 +168,112 @@ fix/gemini-context-and-min-questions
             Clinical Summary
           </label>
 
-          <label style={{ display: "block", marginTop: "12px" }}>
+          <label
+            style={{
+              display: "block",
+              marginTop: "14px",
+              color: "#374151",
+            }}
+          >
             <input
               type="checkbox"
               checked={scope.timeline}
-              onChange={() => toggleScope("timeline")}
+              onChange={() =>
+                toggleScope("timeline")
+              }
             />{" "}
             Medical Timeline
           </label>
 
-          <label style={{ display: "block", marginTop: "12px" }}>
+          <label
+            style={{
+              display: "block",
+              marginTop: "14px",
+              color: "#374151",
+            }}
+          >
             <input
               type="checkbox"
               checked={scope.reports}
-              onChange={() => toggleScope("reports")}
+              onChange={() =>
+                toggleScope("reports")
+              }
             />{" "}
             Medical Reports
           </label>
         </div>
 
-        <div style={{ marginTop: "25px" }}>
-          <h3>Access duration</h3>
+        {/* ACCESS DURATION */}
 
-          <label style={{ marginRight: "18px" }}>
+        <div
+          style={{
+            marginTop: "28px",
+          }}
+        >
+          <h3
+            style={{
+              color: "#1F2937",
+            }}
+          >
+            Access duration
+          </h3>
+
+          <label
+            style={{
+              display: "block",
+              marginTop: "14px",
+              color: "#374151",
+            }}
+          >
             <input
               type="radio"
               name="duration"
               checked={duration === 60}
-              onChange={() => setDuration(60)}
+              onChange={() =>
+                setDuration(60)
+              }
             />{" "}
             1 Hour
           </label>
 
-          <label style={{ marginRight: "18px" }}>
+          <label
+            style={{
+              display: "block",
+              marginTop: "14px",
+              color: "#374151",
+            }}
+          >
             <input
               type="radio"
               name="duration"
               checked={duration === 1440}
-              onChange={() => setDuration(1440)}
+              onChange={() =>
+                setDuration(1440)
+              }
             />{" "}
             24 Hours
           </label>
 
-          <label>
+          <label
+            style={{
+              display: "block",
+              marginTop: "14px",
+              color: "#374151",
+            }}
+          >
             <input
               type="radio"
               name="duration"
               checked={duration === 10080}
-              onChange={() => setDuration(10080)}
+              onChange={() =>
+                setDuration(10080)
+              }
             />{" "}
             7 Days
           </label>
         </div>
+
+        {/* ERROR */}
 
         {error && (
           <div
@@ -192,12 +282,17 @@ fix/gemini-context-and-min-questions
               padding: "12px",
               borderRadius: "10px",
               background: "#FEF2F2",
+              border:
+                "1px solid #FCA5A5",
               color: "#B91C1C",
+              lineHeight: 1.5,
             }}
           >
             {error}
           </div>
         )}
+
+        {/* GENERATE BUTTON */}
 
         <button
           onClick={handleGenerate}
@@ -208,17 +303,23 @@ fix/gemini-context-and-min-questions
             padding: "15px",
             border: "none",
             borderRadius: "12px",
-            background: loading ? "#9CA3AF" : "#0E6E64",
+            background: loading
+              ? "#9CA3AF"
+              : "#0E6E64",
             color: "#FFFFFF",
             fontSize: "16px",
             fontWeight: "700",
-            cursor: loading ? "not-allowed" : "pointer",
+            cursor: loading
+              ? "not-allowed"
+              : "pointer",
           }}
         >
           {loading
             ? "Generating..."
             : "Generate Secure Access"}
         </button>
+
+        {/* ACCESS CODE */}
 
         {access && (
           <div
@@ -227,6 +328,8 @@ fix/gemini-context-and-min-questions
               padding: "22px",
               borderRadius: "14px",
               background: "#EAF5F3",
+              border:
+                "1px solid #B7DED8",
               textAlign: "center",
             }}
           >
@@ -234,9 +337,24 @@ fix/gemini-context-and-min-questions
               style={{
                 color: "#084C44",
                 fontWeight: "600",
+                marginBottom: "8px",
               }}
             >
-              Give this secure code to your doctor
+              Give this secure code to your
+              doctor
+            </p>
+
+            <p
+              style={{
+                color: "#6B7280",
+                fontSize: "12px",
+                textTransform:
+                  "uppercase",
+                letterSpacing: "1px",
+                marginBottom: "8px",
+              }}
+            >
+              Secure Access Code
             </p>
 
             <h2
@@ -244,52 +362,42 @@ fix/gemini-context-and-min-questions
                 fontSize: "32px",
                 letterSpacing: "4px",
                 color: "#0E6E64",
+                margin: "8px 0",
+                fontFamily:
+                  "monospace",
               }}
             >
               {access.code}
             </h2>
 
-            <p style={{ color: "#6B7280" }}>
-              Status: {access.status}
+            <p
+              style={{
+                color: "#6B7280",
+                marginTop: "12px",
+              }}
+            >
+              Status:{" "}
+              <strong>
+                {access.status}
+              </strong>
             </p>
 
             <p
               style={{
                 fontSize: "13px",
                 color: "#6B7280",
+                lineHeight: 1.5,
+                marginBottom: 0,
               }}
             >
-              Access expires according to the duration you
+              Give this code to your doctor.
+              Access expires automatically
+              according to the duration you
               selected.
             </p>
           </div>
         )}
       </div>
-
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>Share With Doctor</h1>
-      <div>
-        <label><input type="checkbox" checked={scope.clinicalSummary} onChange={() => toggleScope("clinicalSummary")} /> Clinical Summary</label><br />
-        <label><input type="checkbox" checked={scope.timeline} onChange={() => toggleScope("timeline")} /> Medical Timeline</label><br />
-        <label><input type="checkbox" checked={scope.reports} onChange={() => toggleScope("reports")} /> Reports</label>
-      </div>
-      <br />
-      <div>
-        <label><input type="radio" name="duration" checked={duration === 60} onChange={() => setDuration(60)} /> 1 Hour</label>
-        <label><input type="radio" name="duration" checked={duration === 1440} onChange={() => setDuration(1440)} /> 24 Hours</label>
-        <label><input type="radio" name="duration" checked={duration === 10080} onChange={() => setDuration(10080)} /> 7 Days</label>
-      </div>
-      <br />
-      <button onClick={handleGenerate}>Generate Secure Access</button>
-     {access && (
-       <div className="mt-6 bg-primary-light border-2 border-primary rounded-2xl p-8 text-center">
-       <p className="text-text-muted text-xs uppercase tracking-widest mb-2">Secure Access Code</p>
-       <h2 className="font-mono text-5xl font-semibold text-primary-dark tracking-[0.2em]">{access.code}</h2>
-       <StatusBadge status={access.status} label={access.status} />
-       <p className="text-text-muted text-sm mt-4">Give this code to your doctor. It expires automatically.</p>
-       </div>
-       )}
- main
     </div>
   );
 }
