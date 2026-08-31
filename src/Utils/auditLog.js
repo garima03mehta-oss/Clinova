@@ -1,11 +1,12 @@
-const auditEvents = [];
+import { collection, addDoc, getDocs, orderBy, query } from "firebase/firestore";
+import { db } from "../firebase/config";
 
-export function logAccessEvent({ who, what, when = Date.now(), why, result }) {
-  const entry = { who, what, when, why, result };
-  auditEvents.push(entry);
-  return entry;
+export async function logAccessEvent({ who, what, when = Date.now(), why, result }) {
+  await addDoc(collection(db, "auditLogs"), { who, what, when, why, result });
 }
 
-export function getAuditLog() {
-  return auditEvents;
+export async function fetchAuditLog() {
+  const q = query(collection(db, "auditLogs"), orderBy("when", "desc"));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => doc.data());
 }

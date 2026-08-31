@@ -4,9 +4,9 @@ import { logAccessEvent } from "../../utils/auditLog";
 export default function DoctorVerification() {
   const [status, setStatus] = useState("DRAFT");
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     setStatus("VERIFIED");
-    logAccessEvent({
+    await logAccessEvent({
       who: "currentDoctorId",
       what: "RECORD_VERIFIED",
       why: "Doctor confirmed AI draft as official record",
