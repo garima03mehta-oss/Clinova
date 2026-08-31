@@ -80,12 +80,26 @@ export default function DoctorDashboard() {
             </h1>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 rounded-xl border border-gray-300 text-text text-sm hover:bg-gray-50"
+         <button
+           onClick={() => navigate("/doctor/billing")}
+           className="text-left bg-surface border border-gray-200 rounded-2xl p-6 hover:shadow-md transition"
           >
-            Logout
-          </button>
+          <div className="text-3xl mb-4">
+            💰
+          </div>
+
+          <h3 className="font-semibold text-text text-lg">
+            Billing & Expenses
+          </h3>
+
+          <p className="text-text-muted text-sm mt-2">
+            Create patient bills, track payments, and manage treatment expenses.
+          </p>
+
+          <p className="text-primary text-sm font-medium mt-5">
+            Open Billing →
+          </p>
+         </button>
 
         </div>
       </header>
