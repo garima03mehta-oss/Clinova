@@ -5,7 +5,7 @@ import RoleSelection from "./pages/RoleSelection";
 import PatientLogin from "./pages/patient/PatientLogin";
 import PatientRegister from "./pages/patient/PatientRegister";
 import PatientDashboard from "./pages/patient/PatientDashboard";
-
+import DoctorPatientRecord from "./pages/doctor/DoctorPatientRecord";
 import Welcome from "./pages/patient/Welcome";
 import Language from "./pages/patient/Language";
 import Consent from "./pages/patient/Consent";
@@ -27,13 +27,14 @@ import PreReport from "./pages/patient/PreReport";
 import DoctorLogin from "./pages/doctor/DoctorLogin";
 import DoctorRegister from "./pages/doctor/DoctorRegister";
 import EnterAccessCode from "./pages/doctor/EnterAccessCode";
+import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import PatientQueue from "./pages/doctor/PatientQueue";
 import AttentionLayer from "./pages/doctor/AttentionLayer";
 import ClinicalSummary from "./pages/doctor/ClinicalSummary";
 import DoctorVerification from "./pages/doctor/DoctorVerification";
 import EmergencyAccess from "./pages/doctor/EmergencyAccess";
 import AuditLog from "./pages/doctor/AuditLog";
-
+import PatientWorkspace from "./pages/doctor/PatientWorkspace";
 function App() {
   return (
     <BrowserRouter>
@@ -55,7 +56,14 @@ function App() {
           path="/patient/login"
           element={<PatientLogin />}
         />
-
+<Route
+  path="/doctor/patient/:patientId"
+  element={<DoctorPatientRecord />}
+/>
+<Route
+  path="/doctor/patient"
+  element={<PatientWorkspace />}
+/>
         <Route
           path="/patient/register"
           element={<PatientRegister />}
@@ -182,7 +190,10 @@ function App() {
           path="/doctor/enter-code"
           element={<EnterAccessCode />}
         />
-
+        <Route
+          path="/doctor/dashboard"
+          element={<DoctorDashboard />}
+        />
         <Route
           path="/doctor/queue"
           element={<PatientQueue />}

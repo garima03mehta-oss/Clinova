@@ -60,7 +60,7 @@ export default function DoctorLogin() {
       );
 
       // Existing doctor workflow remains unchanged
-      navigate("/doctor/enter-code");
+      navigate("/doctor/dashboard");
     } catch (err) {
       if (
         err.code === "auth/invalid-credential" ||
