@@ -37,14 +37,10 @@ export default function PatientQueue() {
 
         const snapshot = await getDocs(q);
 
-        const results = snapshot.docs.map((item) => {
-          const data = item.data();
-
-          return {
-            id: item.id,
-            ...data,
-          };
-        });
+        const results = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }));
 
         setPatients(results);
 
@@ -71,10 +67,27 @@ export default function PatientQueue() {
     if (!timestamp) return "Not available";
 
     try {
+      if (timestamp?.toDate) {
+        return timestamp.toDate().toLocaleString();
+      }
+
       return new Date(timestamp).toLocaleString();
     } catch {
       return "Not available";
     }
+  };
+
+  const openPatient = (patient, destination) => {
+    localStorage.setItem(
+      "clinovaSelectedPatient",
+      JSON.stringify(patient)
+    );
+
+    navigate(destination, {
+      state: {
+        patient,
+      },
+    });
   };
 
   return (
@@ -107,9 +120,7 @@ export default function PatientQueue() {
       {/* CONTENT */}
       <main className="max-w-6xl mx-auto px-6 py-8">
 
-        {/* INTRO */}
         <div className="mb-7">
-
           <h2 className="text-xl font-semibold text-text">
             Authorized Patients
           </h2>
@@ -118,7 +129,6 @@ export default function PatientQueue() {
             Patients who have granted you active access to
             selected medical information.
           </p>
-
         </div>
 
         {/* ERROR */}
@@ -179,12 +189,6 @@ export default function PatientQueue() {
                 patient.patientId ||
                 "Not available";
 
-              const createdAt =
-                formatDate(patient.createdAt);
-
-              const expiresAt =
-                formatDate(patient.expiresAt);
-
               return (
                 <div
                   key={patient.id}
@@ -227,7 +231,7 @@ export default function PatientQueue() {
                       </p>
 
                       <p className="text-sm font-medium text-text mt-1">
-                        {createdAt}
+                        {formatDate(patient.createdAt)}
                       </p>
                     </div>
 
@@ -237,7 +241,7 @@ export default function PatientQueue() {
                       </p>
 
                       <p className="text-sm font-medium text-text mt-1">
-                        {expiresAt}
+                        {formatDate(patient.expiresAt)}
                       </p>
                     </div>
 
@@ -285,11 +289,10 @@ export default function PatientQueue() {
 
                     <button
                       onClick={() =>
-                        navigate("/doctor/attention", {
-                          state: {
-                            patient,
-                          },
-                        })
+                        openPatient(
+                          patient,
+                          "/doctor/attention"
+                        )
                       }
                       className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-sm font-medium text-text hover:bg-gray-50"
                     >
@@ -298,18 +301,30 @@ export default function PatientQueue() {
 
                     <button
                       onClick={() =>
-                        navigate("/doctor/summary", {
-                          state: {
-                            patient,
-                          },
-                        })
+                        openPatient(
+                          patient,
+                          "/doctor/summary"
+                        )
                       }
-                      className="flex-1 px-4 py-3 rounded-xl bg-primary text-white text-sm font-medium"
+                      className="flex-1 px-4 py-3 rounded-xl bg-primary text-white text-sm font-medium hover:opacity-90"
                     >
                       View Clinical Summary
                     </button>
 
                   </div>
+
+                  {/* WORKSPACE */}
+                  <button
+                    onClick={() =>
+                      openPatient(
+                        patient,
+                        "/doctor/patient-workspace"
+                      )
+                    }
+                    className="mt-3 w-full px-4 py-3 rounded-xl border border-primary text-primary text-sm font-medium hover:bg-primary/5"
+                  >
+                    Open Patient Workspace →
+                  </button>
 
                 </div>
               );
