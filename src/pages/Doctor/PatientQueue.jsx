@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../../firebase/config";
+import { logAccessEvent } from "../../utils/auditLog";
+
 export default function PatientQueue() {
   const [patients, setPatients] = useState([]);
   useEffect(() => {
@@ -13,7 +15,14 @@ export default function PatientQueue() {
         where("status", "==", "ACTIVE")
       );
       const snapshot = await getDocs(q);
-      setPatients(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      const results = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setPatients(results);
+      logAccessEvent({
+        who: doctorId,
+        what: "PATIENT_QUEUE_VIEWED",
+        why: "Doctor opened patient queue",
+        result: "ALLOWED"
+      });
     };
     fetchAuthorizedPatients();
   }, []);
