@@ -1,0 +1,105 @@
+export const getHealthTrend = (reports = [], parameter) => {
+  const values = [];
+
+  reports.forEach((report) => {
+    const date =
+      report?.date ||
+      report?.reportDate ||
+      report?.createdAt;
+
+    const extracted = report?.extractedData || report?.labResults || {};
+
+    let value = null;
+
+    if (parameter === "hemoglobin") {
+      value =
+        extracted.hemoglobin ??
+        extracted.hb ??
+        report?.hemoglobin;
+    }
+
+    if (parameter === "wbc") {
+      value =
+        extracted.wbc ??
+        extracted.WBC ??
+        extracted.whiteBloodCells ??
+        report?.wbc;
+    }
+
+    if (parameter === "platelets") {
+      value =
+        extracted.platelets ??
+        extracted.plateletCount ??
+        report?.platelets;
+    }
+
+    if (value === null || value === undefined || value === "") {
+      return;
+    }
+
+    const numericValue = Number(
+      String(value).replace(/[^\d.-]/g, "")
+    );
+
+    if (Number.isNaN(numericValue)) {
+      return;
+    }
+
+    values.push({
+      date: formatDate(date),
+      rawDate: getDateValue(date),
+      value: numericValue,
+    });
+  });
+
+  return values.sort((a, b) => a.rawDate - b.rawDate);
+};
+
+const getDateValue = (date) => {
+  if (!date) return 0;
+
+  if (date?.toDate) {
+    return date.toDate().getTime();
+  }
+
+  const parsed = new Date(date).getTime();
+
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const formatDate = (date) => {
+  if (!date) return "Unknown";
+
+  let parsedDate;
+
+  if (date?.toDate) {
+    parsedDate = date.toDate();
+  } else {
+    parsedDate = new Date(date);
+  }
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Unknown";
+  }
+
+  return parsedDate.toLocaleDateString();
+};
+
+export const getTrendDirection = (values = []) => {
+  if (values.length < 2) {
+    return "Not enough data";
+  }
+
+  const first = values[0].value;
+  const last = values[values.length - 1].value;
+
+  if (last > first) {
+    return "Increasing";
+  }
+
+  if (last < first) {
+    return "Decreasing";
+  }
+
+  return "Stable";
+};
