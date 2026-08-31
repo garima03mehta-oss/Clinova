@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
- fix/gemini-context-and-min-questions
 import { doc, getDoc, setDoc } from "firebase/firestore";
-=======
-import { doc, setDoc } from "firebase/firestore";
-main
 import { db } from "../../firebase/config";
 
 export default function Identification() {
@@ -18,7 +14,11 @@ export default function Identification() {
 
   const navigate = useNavigate();
 
- fix/gemini-context-and-min-questions
+  const language =
+    localStorage.getItem("clinovaLanguage") || "english";
+
+  const isHindi = language === "hindi";
+
   useEffect(() => {
     const loadPatientProfile = async () => {
       try {
@@ -35,7 +35,6 @@ export default function Identification() {
         if (patientSnap.exists()) {
           const data = patientSnap.data();
 
-          // Profile already complete → don't ask again
           if (data.profileComplete === true) {
             localStorage.setItem(
               "clinovaPatient",
@@ -50,7 +49,6 @@ export default function Identification() {
             return;
           }
 
-          // Pre-fill existing data if available
           setName(data.name || "");
           setAge(data.age || "");
           setPhone(data.phone || "");
@@ -69,7 +67,11 @@ export default function Identification() {
     setError("");
 
     if (!name.trim() || !age) {
-      setError("Please enter your name and age.");
+      setError(
+        isHindi
+          ? "कृपया अपना नाम और उम्र दर्ज करें।"
+          : "Please enter your name and age."
+      );
       return;
     }
 
@@ -85,7 +87,6 @@ export default function Identification() {
 
       const patientRef = doc(db, "patients", patientId);
 
-      // Save permanently in Firestore
       await setDoc(
         patientRef,
         {
@@ -99,7 +100,6 @@ export default function Identification() {
         { merge: true }
       );
 
-      // Also keep locally for dashboard greeting
       localStorage.setItem(
         "clinovaPatient",
         JSON.stringify({
@@ -120,7 +120,11 @@ export default function Identification() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg font-body">
-        <p className="text-text-muted">Loading your profile...</p>
+        <p className="text-text-muted">
+          {isHindi
+            ? "आपकी प्रोफ़ाइल लोड हो रही है..."
+            : "Loading your profile..."}
+        </p>
       </div>
     );
   }
@@ -131,46 +135,52 @@ export default function Identification() {
 
         <div className="text-center mb-7">
           <h1 className="font-display text-2xl font-semibold text-text">
-            Tell us about yourself
+            {isHindi
+              ? "अपने बारे में बताएं"
+              : "Tell us about yourself"}
           </h1>
 
           <p className="text-text-muted text-sm mt-2">
-            We only need these details once to create your patient profile.
+            {isHindi
+              ? "आपको ये जानकारी केवल एक बार देनी होगी।"
+              : "We only need these details once to create your patient profile."}
           </p>
         </div>
 
         <label className="block text-sm font-medium text-text mb-2">
-          Full Name
+          {isHindi ? "पूरा नाम" : "Full Name"}
         </label>
 
         <input
-          placeholder="Your full name"
+          placeholder={isHindi ? "अपना पूरा नाम" : "Your full name"}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 outline-none focus:border-primary"
         />
 
         <label className="block text-sm font-medium text-text mb-2">
-          Age
+          {isHindi ? "उम्र" : "Age"}
         </label>
 
         <input
           type="number"
           min="1"
           max="120"
-          placeholder="Your age"
+          placeholder={isHindi ? "अपनी उम्र" : "Your age"}
           value={age}
           onChange={(e) => setAge(e.target.value)}
           className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 outline-none focus:border-primary"
         />
 
         <label className="block text-sm font-medium text-text mb-2">
-          Phone Number
+          {isHindi ? "फ़ोन नंबर" : "Phone Number"}
         </label>
 
         <input
           type="tel"
-          placeholder="Your phone number"
+          placeholder={
+            isHindi ? "अपना फ़ोन नंबर" : "Your phone number"
+          }
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-5 outline-none focus:border-primary"
@@ -181,7 +191,13 @@ export default function Identification() {
           disabled={saving}
           className="w-full bg-primary text-white py-3 rounded-xl font-medium disabled:opacity-60"
         >
-          {saving ? "Saving..." : "Save & Continue"}
+          {saving
+            ? isHindi
+              ? "सेव हो रहा है..."
+              : "Saving..."
+            : isHindi
+            ? "सेव करें और जारी रखें"
+            : "Save & Continue"}
         </button>
 
         {error && (
@@ -189,24 +205,7 @@ export default function Identification() {
             {error}
           </p>
         )}
-
       </div>
-
-  const handleContinue = async () => {
-    const patientId = phone;
-    await setDoc(doc(db, "patients", patientId), { name, age, phone, createdAt: Date.now() });
-    localStorage.setItem("clinovaPatientId", patientId);
-    navigate("/care-system");
-  };
-
-  return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>Your Details</h1>
-      <input placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} /><br />
-      <input placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)} /><br />
-      <input placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} /><br /><br />
-      <button disabled={!name || !age || !phone} onClick={handleContinue}>Continue</button>
- main
     </div>
   );
 }
