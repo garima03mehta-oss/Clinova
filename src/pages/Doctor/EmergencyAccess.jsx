@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { generateEmergencyAccess } from "../../utils/emergencyAccess";
+import { logAccessEvent } from "../../utils/auditLog";
 
 const dummyEmergencyData = {
   allergyHistory: "Penicillin allergy reported",
@@ -14,6 +15,12 @@ export default function EmergencyAccess() {
   const handleActivate = () => {
     const newSession = generateEmergencyAccess("patient-demo-id", "doctor-demo-id");
     setSession(newSession);
+    logAccessEvent({
+      who: "doctor-demo-id",
+      what: "EMERGENCY_ACCESS_ACTIVATED",
+      why: reason,
+      result: "ALLOWED"
+    });
   };
 
   return (
