@@ -7,6 +7,67 @@ export const config = {
   },
 };
 
+function sendFallbackResult(fileName) {
+  const lowerName = String(fileName || "").toLowerCase();
+
+  let documentType = "Medical Document";
+
+  if (
+    lowerName.includes("thyroid") ||
+    lowerName.includes("tsh") ||
+    lowerName.includes("t3") ||
+    lowerName.includes("t4")
+  ) {
+    documentType = "Thyroid Function Test";
+  } else if (
+    lowerName.includes("cbc") ||
+    lowerName.includes("blood") ||
+    lowerName.includes("hemoglobin")
+  ) {
+    documentType = "Blood / Laboratory Report";
+  } else if (lowerName.includes("ecg")) {
+    documentType = "ECG Report";
+  } else if (
+    lowerName.includes("prescription") ||
+    lowerName.includes("medicine")
+  ) {
+    documentType = "Prescription";
+  }
+
+  return {
+    documentType,
+    date: "",
+    hospital: "",
+    doctor: "",
+    patientName: "",
+    clinicalIndication: "",
+    investigations: [],
+    findings: [
+      "Document was uploaded successfully.",
+      "AI document analysis is temporarily unavailable.",
+      "Please have the original document verified by a qualified healthcare professional.",
+    ],
+    impression: "",
+    medications: [],
+    diagnosis: [],
+    recommendations: [],
+    otherInformation: [
+      `Uploaded file: ${fileName}`,
+    ],
+    aiExplanation:
+      "The document was uploaded successfully, but AI analysis is temporarily unavailable. No medical values or diagnosis have been inferred.",
+    status: "FALLBACK_DRAFT",
+    aiAvailable: false,
+  };
+}
+
+function cleanGeminiJSON(text) {
+  return String(text || "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -14,23 +75,29 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({
-      error:
-        "GEMINI_API_KEY is missing from environment.",
-    });
-  }
+  let parsedForm;
 
   try {
     const form = formidable({
       multiples: false,
+      keepExtensions: true,
     });
 
-    const [fields, files] = await form.parse(req);
+    parsedForm = await form.parse(req);
+  } catch (error) {
+    console.error("Formidable parsing error:", error);
 
-    const uploadedFile = Array.isArray(files.file)
+    return res.status(400).json({
+      error: "Unable to read uploaded document.",
+    });
+  }
+
+  try {
+    const [fields, files] = parsedForm;
+
+    const uploadedFile = Array.isArray(files?.file)
       ? files.file[0]
-      : files.file;
+      : files?.file;
 
     if (!uploadedFile) {
       return res.status(400).json({
@@ -39,37 +106,52 @@ export default async function handler(req, res) {
     }
 
     const filePath = uploadedFile.filepath;
+    const fileName =
+      uploadedFile.originalFilename ||
+      uploadedFile.newFilename ||
+      "medical-document";
 
     const mimeType =
       uploadedFile.mimetype ||
       "application/octet-stream";
 
-    const fileBuffer =
-      fs.readFileSync(filePath);
+    /*
+     * --------------------------------------------------
+     * GEMINI IS THE PRIMARY DOCUMENT ANALYZER
+     * --------------------------------------------------
+     */
 
-    const base64Data =
-      fileBuffer.toString("base64");
+    if (!process.env.GEMINI_API_KEY) {
+      console.warn(
+        "GEMINI_API_KEY missing. Using fallback extraction."
+      );
+
+      return res.status(200).json(
+        sendFallbackResult(fileName)
+      );
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+    const base64Data = fileBuffer.toString("base64");
 
     const prompt = `
 You are Clinova's Medical Document Intelligence module.
 
-Analyze the uploaded medical document.
+You are NOT a doctor.
 
-Extract ONLY information that is actually visible/readable.
+Analyze the uploaded medical document carefully.
 
-Do NOT invent information.
-Do NOT diagnose the patient.
-Do NOT prescribe treatment.
+The document may be any medical document, including:
 
-The document can be any medical document:
 - Blood report
 - CBC
-- Thyroid report
+- Thyroid function test
 - Lipid profile
 - Liver function test
 - Kidney function test
 - Diabetes report
 - ECG
+- Echocardiogram
 - X-ray
 - CT
 - MRI
@@ -78,9 +160,28 @@ The document can be any medical document:
 - Discharge summary
 - Consultation note
 - Pathology report
-- Vaccination record
 - Medical bill
+- Vaccination record
 - Other medical document
+
+IMPORTANT:
+
+1. Read the actual uploaded document.
+2. Extract ONLY information that is actually visible/readable.
+3. Do NOT rely only on the filename.
+4. Do NOT invent values.
+5. Do NOT diagnose the patient.
+6. Do NOT prescribe treatment.
+7. Preserve units and reference ranges when visible.
+8. Preserve high/low/abnormal flags when explicitly present.
+9. If information is unavailable, return an empty string or empty array.
+10. For thyroid reports, extract TSH, T3, T4, FT3, FT4 when present.
+11. For ECG reports, extract visible measurements and the reported impression.
+12. For imaging, extract findings and impression.
+13. For prescriptions, extract medicines, dose, frequency and duration.
+14. For discharge summaries, extract relevant diagnoses, investigations, medicines and recommendations exactly as documented.
+15. aiExplanation must be simple and patient-friendly.
+16. Clearly state that this is an AI-generated draft requiring professional verification.
 
 Return ONLY valid JSON.
 
@@ -93,83 +194,87 @@ Use exactly this structure:
   "doctor": "",
   "patientName": "",
   "clinicalIndication": "",
-  "investigations": [],
+  "investigations": [
+    {
+      "name": "",
+      "value": "",
+      "unit": "",
+      "referenceRange": "",
+      "flag": ""
+    }
+  ],
   "findings": [],
   "impression": "",
-  "medications": [],
+  "medications": [
+    {
+      "name": "",
+      "dose": "",
+      "frequency": "",
+      "duration": ""
+    }
+  ],
   "diagnosis": [],
   "recommendations": [],
   "otherInformation": [],
   "aiExplanation": "",
-  "status": "DRAFT"
+  "status": "DRAFT",
+  "aiAvailable": true
 }
-
-For investigations use:
-
-{
-  "name": "",
-  "value": "",
-  "unit": "",
-  "referenceRange": "",
-  "flag": ""
-}
-
-For medications use:
-
-{
-  "name": "",
-  "dose": "",
-  "frequency": "",
-  "duration": ""
-}
-
-Rules:
-
-1. Identify the actual document type.
-2. Extract only visible information.
-3. Preserve units.
-4. Preserve reference ranges if visible.
-5. Preserve abnormal/high/low flags if shown.
-6. Do not calculate values.
-7. Do not infer a diagnosis.
-8. If information is unavailable, use "" or [].
-9. Do not invent patient name, hospital, doctor or dates.
-10. aiExplanation must be simple and patient-friendly.
-11. aiExplanation must clearly say this is an AI-generated draft requiring professional verification.
 `;
 
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data,
-                  },
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: "application/json",
+    let geminiResponse;
+
+    try {
+      geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      }
-    );
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                  {
+                    inline_data: {
+                      mime_type: mimeType,
+                      data: base64Data,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+    } catch (networkError) {
+      console.error(
+        "Gemini network error:",
+        networkError
+      );
+
+      return res.status(200).json(
+        sendFallbackResult(fileName)
+      );
+    }
 
     const geminiData =
-      await geminiResponse.json();
+      await geminiResponse.json().catch(
+        () => ({})
+      );
+
+    /*
+     * --------------------------------------------------
+     * GEMINI QUOTA / API ERROR
+     * --------------------------------------------------
+     *
+     * Instead of showing a white screen,
+     * return a safe fallback result.
+     */
 
     if (!geminiResponse.ok) {
       console.error(
@@ -177,30 +282,31 @@ Rules:
         geminiData
       );
 
-      return res.status(
-        geminiResponse.status
-      ).json({
-        error:
+      return res.status(200).json({
+        ...sendFallbackResult(fileName),
+        aiError:
           geminiData?.error?.message ||
-          "Gemini rejected the document.",
-        geminiError: geminiData,
+          "Gemini document analysis unavailable.",
       });
     }
 
     const rawText =
-      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+      geminiData?.candidates?.[0]?.content?.parts?.[0]
+        ?.text;
 
     if (!rawText) {
-      return res.status(500).json({
-        error:
-          "Gemini returned no document analysis.",
-      });
+      console.error(
+        "Gemini returned no document analysis."
+      );
+
+      return res.status(200).json(
+        sendFallbackResult(fileName)
+      );
     }
 
-    const cleaned = rawText
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
+    const cleaned = cleanGeminiJSON(
+      rawText
+    );
 
     let parsed;
 
@@ -212,64 +318,88 @@ Rules:
         cleaned
       );
 
-      return res.status(500).json({
-        error:
-          "Gemini returned invalid JSON.",
-        rawText: cleaned,
-      });
+      return res.status(200).json(
+        sendFallbackResult(fileName)
+      );
     }
 
     /*
-     * Ensure status is always present.
+     * Ensure expected fields always exist.
      */
-    parsed.status = "DRAFT";
 
-    /*
-     * Ensure arrays exist.
-     */
-    parsed.investigations =
-      Array.isArray(parsed.investigations)
-        ? parsed.investigations
-        : [];
+    const safeResult = {
+      documentType:
+        parsed.documentType || "Medical Document",
 
-    parsed.findings =
-      Array.isArray(parsed.findings)
-        ? parsed.findings
-        : [];
+      date: parsed.date || "",
+      hospital: parsed.hospital || "",
+      doctor: parsed.doctor || "",
+      patientName:
+        parsed.patientName || "",
 
-    parsed.medications =
-      Array.isArray(parsed.medications)
-        ? parsed.medications
-        : [];
+      clinicalIndication:
+        parsed.clinicalIndication || "",
 
-    parsed.diagnosis =
-      Array.isArray(parsed.diagnosis)
-        ? parsed.diagnosis
-        : [];
+      investigations:
+        Array.isArray(parsed.investigations)
+          ? parsed.investigations
+          : [],
 
-    parsed.recommendations =
-      Array.isArray(parsed.recommendations)
-        ? parsed.recommendations
-        : [];
+      findings:
+        Array.isArray(parsed.findings)
+          ? parsed.findings
+          : [],
 
-    parsed.otherInformation =
-      Array.isArray(
-        parsed.otherInformation
-      )
-        ? parsed.otherInformation
-        : [];
+      impression:
+        parsed.impression || "",
 
-    return res.status(200).json(parsed);
+      medications:
+        Array.isArray(parsed.medications)
+          ? parsed.medications
+          : [],
+
+      diagnosis:
+        Array.isArray(parsed.diagnosis)
+          ? parsed.diagnosis
+          : [],
+
+      recommendations:
+        Array.isArray(parsed.recommendations)
+          ? parsed.recommendations
+          : [],
+
+      otherInformation:
+        Array.isArray(parsed.otherInformation)
+          ? parsed.otherInformation
+          : [],
+
+      aiExplanation:
+        parsed.aiExplanation ||
+        "The document was analyzed by AI. Please verify the extracted information with a qualified healthcare professional.",
+
+      status: "DRAFT",
+      aiAvailable: true,
+    };
+
+    return res.status(200).json(
+      safeResult
+    );
   } catch (error) {
     console.error(
       "Document extraction failed:",
       error
     );
 
-    return res.status(500).json({
-      error:
-        error.message ||
-        "Unable to analyze the medical document.",
-    });
+    /*
+     * Final safety net.
+     * Never let document upload produce
+     * a white screen because of AI failure.
+     */
+
+    return res.status(200).json(
+      sendFallbackResult(
+        "medical-document"
+      )
+    );
   }
 }
