@@ -13,6 +13,7 @@ import HealthRecord from "./pages/patient/HealthRecord";
 import RecordSearch from "./pages/patient/RecordSearch";
 import ShareConsent from "./pages/patient/ShareConsent";
 import ShareAccess from "./pages/patient/ShareAccess";
+import PreReport from "./pages/patient/PreReport";
 import DoctorLogin from "./pages/doctor/DoctorLogin";
 import EnterAccessCode from "./pages/doctor/EnterAccessCode";
 import PatientQueue from "./pages/doctor/PatientQueue";
@@ -22,7 +23,6 @@ import DoctorVerification from "./pages/doctor/DoctorVerification";
 import PatientRegister from "./pages/patient/PatientRegister";
 import DoctorRegister from "./pages/doctor/DoctorRegister";
 import PatientDashboard from "./pages/patient/PatientDashboard";
-
 import EmergencyAccess from "./pages/doctor/EmergencyAccess";
 import AuditLog from "./pages/doctor/AuditLog";
 
@@ -35,7 +35,7 @@ function App() {
         <Route path="/" element={<RoleSelection />} />
 
         <Route path="/patient/login" element={<PatientLogin />} />
-                <Route path="/patient/register" element={<PatientRegister />} />
+        <Route path="/patient/register" element={<PatientRegister />} />
 
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/language" element={<Language />} />
@@ -50,7 +50,7 @@ function App() {
         <Route path="/share-consent" element={<ShareConsent />} />
         <Route path="/share-access" element={<ShareAccess />} />
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
-
+        
         <Route path="/doctor" element={<DoctorLogin />} />
         <Route path="/doctor/register" element={<DoctorRegister />} />
 
@@ -61,7 +61,7 @@ function App() {
         <Route path="/doctor/verification" element={<DoctorVerification />} />
         <Route path="/doctor/emergency" element={<EmergencyAccess />} />
         <Route path="/doctor/audit-log" element={<AuditLog />} />
-
+        <Route path="/pre-report"element={<PreReport />}/>
 
       </Routes>
     </BrowserRouter>
