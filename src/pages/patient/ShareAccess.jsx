@@ -33,12 +33,14 @@ export default function ShareAccess() {
       </div>
       <br />
       <button onClick={handleGenerate}>Generate Secure Access</button>
-      {access && (
-        <div>
-          <h2>{access.code}</h2>
-          <p>Status: {access.status} — give this code to your doctor.</p>
-        </div>
-      )}
+     {access && (
+       <div className="mt-6 bg-primary-light border-2 border-primary rounded-2xl p-8 text-center">
+       <p className="text-text-muted text-xs uppercase tracking-widest mb-2">Secure Access Code</p>
+       <h2 className="font-mono text-5xl font-semibold text-primary-dark tracking-[0.2em]">{access.code}</h2>
+       <StatusBadge status={access.status} label={access.status} />
+       <p className="text-text-muted text-sm mt-4">Give this code to your doctor. It expires automatically.</p>
+       </div>
+       )}
     </div>
   );
 }
