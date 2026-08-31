@@ -21,6 +21,7 @@ import ClinicalSummary from "./pages/doctor/ClinicalSummary";
 import DoctorVerification from "./pages/doctor/DoctorVerification";
 import PatientRegister from "./pages/patient/PatientRegister";
 import DoctorRegister from "./pages/doctor/DoctorRegister";
+import PatientDashboard from "./pages/patient/PatientDashboard";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
         <Route path="/search" element={<RecordSearch />} />
         <Route path="/share-consent" element={<ShareConsent />} />
         <Route path="/share-access" element={<ShareAccess />} />
+        <Route path="/patient/dashboard" element={<PatientDashboard />} />
 
         <Route path="/doctor" element={<DoctorLogin />} />
         <Route path="/doctor/register" element={<DoctorRegister />} />

@@ -7,7 +7,7 @@ export default function Identification() {
   const navigate = useNavigate();
   const handleContinue = () => {
     localStorage.setItem("clinovaPatient", JSON.stringify({ name, age, phone }));
-    navigate("/care-system");
+   navigate("/patient/dashboard");;
   };
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
