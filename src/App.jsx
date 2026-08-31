@@ -35,6 +35,14 @@ import DoctorVerification from "./pages/doctor/DoctorVerification";
 import EmergencyAccess from "./pages/doctor/EmergencyAccess";
 import AuditLog from "./pages/doctor/AuditLog";
 import PatientWorkspace from "./pages/doctor/PatientWorkspace";
+
+import BillingDashboard from "./pages/doctor/billing/BillingDashboard";
+import CreateBill from "./pages/doctor/billing/CreateBill";
+import BillDetails from "./pages/doctor/billing/BillDetails";
+import ExpenseManagement from "./pages/doctor/billing/ExpenseManagement";
+
+import HealthTrends from "./pages/doctor/HealthTrends";
+
 function App() {
   return (
     <BrowserRouter>
@@ -222,6 +230,31 @@ function App() {
         <Route
           path="/doctor/audit-log"
           element={<AuditLog />}
+        />
+
+        <Route
+          path="/doctor/billing"
+          element={<BillingDashboard />}
+        />
+
+        <Route
+          path="/doctor/billing/create"
+          element={<CreateBill />}
+        />
+
+        <Route
+          path="/doctor/billing/expenses"
+          element={<ExpenseManagement />}
+        />
+
+        <Route
+          path="/doctor/billing/:billId"
+          element={<BillDetails />}
+        />
+
+        <Route
+          path="/doctor/health-trends"
+          element={<HealthTrends />}
         />
       </Routes>
     </BrowserRouter>

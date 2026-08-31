@@ -391,6 +391,33 @@ export default function PatientWorkspace() {
 
             </button>
 
+            {/* HEALTH TRENDS */}
+            <button
+              onClick={() =>
+              navigate("/doctor/health-trends", {
+              state: { patient },
+              })
+              } 
+            className="text-left bg-surface border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition"
+            >
+            <div className="text-3xl mb-4">
+              📈
+            </div>
+
+            <h3 className="font-semibold text-text text-lg">
+              Health Trends
+            </h3>
+
+            <p className="text-text-muted text-sm mt-2 leading-6">
+              Track laboratory values such as hemoglobin, WBC and
+              platelets across previous medical reports.
+            </p>
+
+            <p className="text-primary text-sm font-medium mt-5">
+              View Health Trends →
+            </p>
+            </button>
+
           </div>
 
         </section>
