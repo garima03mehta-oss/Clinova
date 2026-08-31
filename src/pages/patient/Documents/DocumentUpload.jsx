@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+feature/doctor-dashboard
+import {
+  extractDocumentInfo,
+  explainDocument
+} from "../../../utils/documentExtraction";
+
 fix/gemini-context-and-min-questions
 import { extractDocumentInfo, explainDocument } from "../../../utils/documentExtraction";
 import StatusBadge from "../../../components/StatusBadge";
 import { extractDocumentInfo, explainDocument } from "../../../Utils/documentExtraction"
 main
-
+main
 export default function DocumentUpload() {
   const [fileName, setFileName] = useState(null);
   const [extracted, setExtracted] = useState(null);
