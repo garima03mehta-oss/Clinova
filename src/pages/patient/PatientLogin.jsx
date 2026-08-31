@@ -23,7 +23,7 @@ export default function PatientLogin() {
     try {
       setLoading(true);
 
-      // Firebase Authentication verifies that the account exists
+      // Firebase Authentication
       const result = await signInWithEmailAndPassword(
         auth,
         email.trim(),
@@ -32,7 +32,7 @@ export default function PatientLogin() {
 
       const patientId = result.user.uid;
 
-      // Check the patient's Firestore profile
+      // Get patient profile from Firestore
       const patientRef = doc(db, "patients", patientId);
       const patientSnap = await getDoc(patientRef);
 
@@ -45,9 +45,10 @@ export default function PatientLogin() {
 
       const patientData = patientSnap.data();
 
+      // Save patient ID
       localStorage.setItem("clinovaPatientId", patientId);
 
-      // Save profile locally if it already exists
+      // Save profile locally if available
       if (
         patientData.name ||
         patientData.age ||
@@ -63,13 +64,18 @@ export default function PatientLogin() {
         );
       }
 
-      // If details were already completed → Dashboard
-      if (patientData.profileComplete === true) {
-        navigate("/patient/dashboard");
-      } else {
-        // First-time patient → onboarding
-        navigate("/welcome");
-      }
+      // Remember whether profile is already complete.
+      // Consent page will decide whether to open
+      // Identification or Dashboard.
+      localStorage.setItem(
+        "clinovaProfileComplete",
+        patientData.profileComplete === true ? "true" : "false"
+      );
+
+      // IMPORTANT:
+      // Do NOT directly open dashboard anymore.
+      // Every patient goes through language selection first.
+      navigate("/language");
     } catch (err) {
       if (
         err.code === "auth/invalid-credential" ||
@@ -101,6 +107,7 @@ export default function PatientLogin() {
           </p>
         </div>
 
+        {/* Email */}
         <label className="block text-sm font-medium text-text mb-2">
           Email
         </label>
@@ -113,6 +120,7 @@ export default function PatientLogin() {
           className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 outline-none focus:border-primary"
         />
 
+        {/* Password */}
         <label className="block text-sm font-medium text-text mb-2">
           Password
         </label>
@@ -123,11 +131,14 @@ export default function PatientLogin() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleLogin();
+            if (e.key === "Enter") {
+              handleLogin();
+            }
           }}
           className="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 outline-none focus:border-primary"
         />
 
+        {/* Login button */}
         <button
           onClick={handleLogin}
           disabled={loading}
@@ -136,12 +147,14 @@ export default function PatientLogin() {
           {loading ? "Signing in..." : "Login"}
         </button>
 
+        {/* Error */}
         {error && (
           <p className="text-danger text-sm mt-4 text-center">
             {error}
           </p>
         )}
 
+        {/* Register */}
         <p className="text-text-muted text-sm mt-5 text-center">
           New Patient?{" "}
           <button
