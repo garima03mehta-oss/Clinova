@@ -66,7 +66,6 @@ import ExpenseManagement from "./pages/doctor/billing/ExpenseManagement";
 function App() {
   return (
     <BrowserRouter>
-
       <Routes>
 
         {/* ========================================
@@ -103,7 +102,6 @@ function App() {
           element={<PatientDashboard />}
         />
 
-        {/* Backward compatibility */}
         <Route
           path="/patient"
           element={<PatientDashboard />}
@@ -236,7 +234,7 @@ function App() {
 
 
         {/* ========================================
-            DOCTOR PATIENT QUEUE
+            PATIENT QUEUE
         ======================================== */}
 
         <Route
@@ -249,19 +247,16 @@ function App() {
             PATIENT WORKSPACE
         ======================================== */}
 
-        {/* Existing route */}
         <Route
           path="/doctor/patient"
           element={<PatientWorkspace />}
         />
 
-        {/* Dashboard workspace route */}
         <Route
           path="/doctor/patient-workspace"
           element={<PatientWorkspace />}
         />
 
-        {/* Patient-specific record */}
         <Route
           path="/doctor/patient/:patientId"
           element={<DoctorPatientRecord />}
@@ -269,7 +264,7 @@ function App() {
 
 
         {/* ========================================
-            DOCTOR ATTENTION LAYER
+            ATTENTION LAYER
         ======================================== */}
 
         <Route
@@ -282,16 +277,11 @@ function App() {
             CLINICAL SUMMARY
         ======================================== */}
 
-        {/* Existing route */}
         <Route
           path="/doctor/summary"
           element={<ClinicalSummary />}
         />
 
-        {/* IMPORTANT:
-            This matches the route used by your
-            Doctor Dashboard.
-        */}
         <Route
           path="/doctor/clinical-summary"
           element={<ClinicalSummary />}
@@ -312,8 +302,18 @@ function App() {
             EMERGENCY ACCESS
         ======================================== */}
 
+        {/* Existing emergency route */}
         <Route
           path="/doctor/emergency"
+          element={<EmergencyAccess />}
+        />
+
+        {/* IMPORTANT:
+            PatientWorkspace is currently trying
+            to open this URL.
+        */}
+        <Route
+          path="/doctor/emergency-access"
           element={<EmergencyAccess />}
         />
 
@@ -363,7 +363,6 @@ function App() {
         />
 
       </Routes>
-
     </BrowserRouter>
   );
 }
