@@ -21,7 +21,13 @@ import ClinicalSummary from "./pages/doctor/ClinicalSummary";
 import DoctorVerification from "./pages/doctor/DoctorVerification";
 import PatientRegister from "./pages/patient/PatientRegister";
 import DoctorRegister from "./pages/doctor/DoctorRegister";
+fix/gemini-context-and-min-questions
 import PatientDashboard from "./pages/patient/PatientDashboard";
+
+import EmergencyAccess from "./pages/doctor/EmergencyAccess";
+import AuditLog from "./pages/doctor/AuditLog";
+
+ main
 
 function App() {
   return (
@@ -54,6 +60,9 @@ function App() {
         <Route path="/doctor/attention" element={<AttentionLayer />} />
         <Route path="/doctor/summary" element={<ClinicalSummary />} />
         <Route path="/doctor/verification" element={<DoctorVerification />} />
+        <Route path="/doctor/emergency" element={<EmergencyAccess />} />
+        <Route path="/doctor/audit-log" element={<AuditLog />} />
+
 
       </Routes>
     </BrowserRouter>
