@@ -859,6 +859,7 @@ export default function Interview() {
    */
 
   return (
+ fix/gemini-context-and-min-questions
     <div
       style={{
         minHeight: "100vh",
@@ -1150,23 +1151,50 @@ export default function Interview() {
             </button>
           </div>
         )}
+<div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body">
+  <div className="w-full max-w-md bg-surface rounded-2xl shadow-sm border border-gray-100 p-8">
+    <p className="text-text-muted text-xs font-mono mb-4">Completeness: {completeness}%</p>
+    <div className="w-full bg-gray-100 rounded-full h-2 mb-6">
+      <div
+        className="bg-primary h-2 rounded-full transition-all"
+        style={{ width: `${completeness}%` }}
+      />
+    </div>
+    {priorityAlert && (
+      <div className="bg-red-50 border border-danger rounded-xl p-3 mb-4">
+        <p className="text-danger text-sm font-medium">⚠️ {priorityAlert}</p>
+      </div>
+    )}
+    <p className="font-display text-xl text-text mb-6">{currentQuestion}</p>
+    <div className="flex gap-3">
+      <button
+        onClick={() => handleAnswer("breathingDifficulty", true)}
+        className="flex-1 bg-primary text-white py-3 rounded-xl"
+      >
+        Yes
+      </button>
+      <button
+        onClick={() => handleAnswer("breathingDifficulty", false)}
+        className="flex-1 bg-surface border-2 border-primary text-primary py-3 rounded-xl"
+      >
+        No
+      </button>
+    </div>
+  </div>
 
-        {/* FOOTER */}
-
-        <p
-          style={{
-            marginTop: "28px",
-            color: "#6B7280",
-            fontSize: "12px",
-            lineHeight: 1.5,
-            textAlign: "center",
-          }}
-        >
-          Clinova provides an AI-generated
-          pre-consultation draft. It does not
-          provide a diagnosis or replace a
-          qualified healthcare professional.
-        </p>
+  {/* FOOTER */}
+  <p
+    style={{
+      marginTop: "28px",
+      color: "#6B7280",
+      fontSize: "12px",
+      lineHeight: 1.5,
+      textAlign: "center",
+    }}
+  >
+    Clinova provides an AI-generated pre-consultation draft. It does not provide a diagnosis or replace a qualified healthcare professional.
+  </p>
+</div>
       </div>
     </div>
   );

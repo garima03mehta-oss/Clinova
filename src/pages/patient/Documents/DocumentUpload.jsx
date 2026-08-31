@@ -137,6 +137,7 @@ export default function DocumentUpload() {
   };
 
   return (
+fix/gemini-context-and-min-questions
     <div
       style={{
         minHeight: "100vh",
@@ -798,6 +799,28 @@ export default function DocumentUpload() {
           professional.
         </p>
       </div>
+
+    <div style={{ textAlign: "center", marginTop: "100px" }}>
+      <h1>Clinical Interview</h1>
+      <p>History Completeness: {completeness}%</p>
+      {priorityAlert && <p style={{ color: "red", fontWeight: "bold" }}>⚠️ {priorityAlert}</p>}
+      <p>{currentQuestion}</p>
+      <button onClick={() => handleAnswer("breathingDifficulty", true)}>Yes</button>
+      <button onClick={() => handleAnswer("breathingDifficulty", false)}>No</button>
+
+      {extracted && (
+      <div className="mt-6 bg-surface rounded-2xl shadow-sm border border-gray-100 p-6 text-left">
+      <StatusBadge status={extracted.status} label={extracted.status === "DRAFT" ? "AI Draft — Unverified" : "Verified"} />
+      <p className="font-display text-lg text-text mt-4">{extracted.documentType}</p>
+      <p className="text-text-muted text-sm mt-1">Date: {extracted.date}</p>
+      <p className="text-text-muted text-sm">Hospital: {extracted.hospital}</p>
+      <p className="text-accent text-xs mt-4 italic">{explainDocument(extracted)}</p>
+      </div>
+      )}
+
+      (add import StatusBadge from "../../../components/StatusBadge"; at top)
+
+ main
     </div>
   );
 }
