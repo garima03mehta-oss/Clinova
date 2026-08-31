@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../../firebase/config";
 import { generateAccessCode } from "../../utils/accessCode";
+
 export default function ShareAccess() {
   const [scope, setScope] = useState({ clinicalSummary: true, timeline: true, reports: false });
   const [duration, setDuration] = useState(60);
@@ -7,9 +10,11 @@ export default function ShareAccess() {
 
   const toggleScope = (key) => setScope({ ...scope, [key]: !scope[key] });
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    const patientId = localStorage.getItem("clinovaPatientId");
     const newAccess = generateAccessCode(scope, duration);
-    setAccess(newAccess);
+    const docRef = await addDoc(collection(db, "accessRequests"), { ...newAccess, patientId });
+    setAccess({ ...newAccess, id: docRef.id });
   };
 
   return (
@@ -31,7 +36,7 @@ export default function ShareAccess() {
       {access && (
         <div>
           <h2>{access.code}</h2>
-          <p>Status: {access.status} — give this code to your doctor. It only starts a request; the doctor still needs authorization.</p>
+          <p>Status: {access.status} — give this code to your doctor.</p>
         </div>
       )}
     </div>
