@@ -5,6 +5,7 @@ import { getAIQuestions } from "../../../utils/aiInterviewEngine";
 export default function Interview() {
   const navigate = useNavigate();
 
+  const [language, setLanguage] = useState("english");
   const [symptomText, setSymptomText] = useState("");
   const [history, setHistory] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -15,40 +16,192 @@ export default function Interview() {
   const [started, setStarted] = useState(false);
   const [showDocumentChoice, setShowDocumentChoice] = useState(false);
 
-  const fallbackQuestions = [
-    {
-      question: "How long have you been experiencing these symptoms?",
-      type: "text",
-      key: "symptom_duration",
-      options: [],
-    },
-    {
-      question: "How would you describe the severity of your symptoms?",
-      type: "choice",
-      key: "symptom_severity",
-      options: ["Mild", "Moderate", "Severe"],
-    },
-    {
-      question: "How are your symptoms changing over time?",
-      type: "choice",
-      key: "symptom_progression",
-      options: [
-        "Getting better",
-        "Getting worse",
-        "About the same",
-      ],
-    },
-    {
-      question:
-        "Are there any other symptoms or important details you think your doctor should know?",
-      type: "text",
-      key: "associated_symptoms",
-      options: [],
-    },
-  ];
+  const isHindi = language === "hindi";
+
+  const t = {
+    step1: isHindi
+      ? "चरण 1 • क्लिनिकल इंटरव्यू"
+      : "STEP 1 • CLINICAL INTERVIEW",
+
+    step2: isHindi
+      ? "चरण 2 • मेडिकल दस्तावेज़"
+      : "STEP 2 • MEDICAL DOCUMENTS",
+
+    tellSymptoms: isHindi
+      ? "अपने लक्षणों के बारे में बताएं"
+      : "Tell us about your symptoms",
+
+    intro: isHindi
+      ? "Clinova आपके लक्षणों के आधार पर कुछ महत्वपूर्ण प्रश्न पूछेगा ताकि आपके डॉक्टर के लिए जानकारी व्यवस्थित की जा सके।"
+      : "Clinova will ask a few relevant questions to organize information for your doctor.",
+
+    placeholder: isHindi
+      ? "उदाहरण: मुझे कल से सिरदर्द हो रहा है..."
+      : "For example: I have been having a headache since yesterday...",
+
+    start: isHindi
+      ? "क्लिनिकल इंटरव्यू शुरू करें →"
+      : "Start Clinical Interview →",
+
+    preparing: isHindi
+      ? "🤖 प्रश्न तैयार किए जा रहे हैं..."
+      : "🤖 Preparing questions...",
+
+    smartInterview: isHindi
+      ? "CLINOVA • स्मार्ट क्लिनिकल इंटरव्यू"
+      : "CLINOVA • ADAPTIVE INTERVIEW",
+
+    clinicalQuestions: isHindi
+      ? "क्लिनिकल प्रश्न"
+      : "Clinical Questions",
+
+    question: isHindi ? "प्रश्न" : "Question",
+
+    mainComplaint: isHindi
+      ? "मुख्य शिकायत:"
+      : "Main complaint:",
+
+    answerPlaceholder: isHindi
+      ? "अपना उत्तर यहां लिखें..."
+      : "Type your answer here...",
+
+    thinking: isHindi
+      ? "🤖 अगला प्रश्न तैयार हो रहा है..."
+      : "🤖 Thinking...",
+
+    continue: isHindi
+      ? "आगे बढ़ें →"
+      : "Continue →",
+
+    noAnswer: isHindi
+      ? "कृपया अपना उत्तर दर्ज करें।"
+      : "Please provide an answer.",
+
+    noSymptom: isHindi
+      ? "कृपया पहले अपने मुख्य लक्षण दर्ज करें।"
+      : "Please enter your main symptom first.",
+
+    interviewError: isHindi
+      ? "इंटरव्यू शुरू नहीं हो सका। कृपया दोबारा प्रयास करें।"
+      : "Unable to start the interview. Please try again.",
+
+    fallbackError: isHindi
+      ? "AI प्रश्न अभी उपलब्ध नहीं हैं। सामान्य क्लिनिकल प्रश्नों के साथ इंटरव्यू जारी रहेगा।"
+      : "AI questions are temporarily unavailable. Using standard clinical questions.",
+
+    answerFallback: isHindi
+      ? "AI अभी उपलब्ध नहीं है। सामान्य प्रश्नों के साथ इंटरव्यू जारी रहेगा।"
+      : "AI is temporarily unavailable. Continuing with standard questions.",
+
+    documentQuestion: isHindi
+      ? "क्या आपके पास कोई मेडिकल दस्तावेज़ है?"
+      : "Do you have a medical document?",
+
+    documentDescription: isHindi
+      ? "आप अपनी पुरानी मेडिकल रिपोर्ट, प्रिस्क्रिप्शन, लैब रिपोर्ट या स्कैन जोड़ सकते हैं। Clinova आपके दस्तावेज़ का AI की सहायता से विश्लेषण कर सकता है और प्री-कंसल्टेशन रिपोर्ट तैयार करने में मदद कर सकता है।"
+      : "You can add a previous medical report, prescription, lab report or scan. Clinova can analyze the document with AI before preparing your pre-consultation report.",
+
+    yesDocument: isHindi
+      ? "📄 हाँ, मेरे पास दस्तावेज़ है"
+      : "📄 Yes, I have a document",
+
+    uploadDescription: isHindi
+      ? "दस्तावेज़ अपलोड करें और चाहें तो Clinova AI से उसका विश्लेषण करवाएं।"
+      : "Upload it and optionally analyze it with Clinova AI.",
+
+    noDocument: isHindi
+      ? "⏭️ मेरे पास कोई दस्तावेज़ नहीं है"
+      : "⏭️ I don't have a document",
+
+    continueDescription: isHindi
+      ? "सीधे आगे बढ़ें और अपनी प्री-कंसल्टेशन रिपोर्ट तैयार करें।"
+      : "Continue directly and generate your pre-consultation report.",
+
+    optional: isHindi
+      ? "दस्तावेज़ अपलोड करना वैकल्पिक है। आप बिना दस्तावेज़ के भी रिपोर्ट तैयार कर सकते हैं।"
+      : "Documents are optional. You can generate your report without uploading anything.",
+
+    disclaimer: isHindi
+      ? "Clinova द्वारा तैयार की गई जानकारी केवल प्री-कंसल्टेशन ड्राफ्ट है। यह किसी बीमारी का निदान नहीं करती और योग्य स्वास्थ्य विशेषज्ञ की सलाह का विकल्प नहीं है।"
+      : "Clinova provides an AI-generated pre-consultation draft. It does not provide a diagnosis or replace a qualified healthcare professional.",
+  };
+
+  const fallbackQuestions = isHindi
+    ? [
+        {
+          question: "आप इन लक्षणों को कितने समय से अनुभव कर रहे हैं?",
+          type: "text",
+          key: "symptom_duration",
+          options: [],
+        },
+        {
+          question: "आपके लक्षणों की गंभीरता कैसी है?",
+          type: "choice",
+          key: "symptom_severity",
+          options: ["हल्के", "मध्यम", "गंभीर"],
+        },
+        {
+          question: "समय के साथ आपके लक्षणों में क्या बदलाव आया है?",
+          type: "choice",
+          key: "symptom_progression",
+          options: [
+            "बेहतर हो रहे हैं",
+            "बदतर हो रहे हैं",
+            "लगभग समान हैं",
+          ],
+        },
+        {
+          question:
+            "क्या कोई अन्य लक्षण या महत्वपूर्ण जानकारी है जो आप चाहते हैं कि डॉक्टर को पता हो?",
+          type: "text",
+          key: "associated_symptoms",
+          options: [],
+        },
+      ]
+    : [
+        {
+          question: "How long have you been experiencing these symptoms?",
+          type: "text",
+          key: "symptom_duration",
+          options: [],
+        },
+        {
+          question: "How would you describe the severity of your symptoms?",
+          type: "choice",
+          key: "symptom_severity",
+          options: ["Mild", "Moderate", "Severe"],
+        },
+        {
+          question: "How are your symptoms changing over time?",
+          type: "choice",
+          key: "symptom_progression",
+          options: [
+            "Getting better",
+            "Getting worse",
+            "About the same",
+          ],
+        },
+        {
+          question:
+            "Are there any other symptoms or important details you think your doctor should know?",
+          type: "text",
+          key: "associated_symptoms",
+          options: [],
+        },
+      ];
 
   useEffect(() => {
     try {
+      const savedLanguage =
+        localStorage.getItem("clinovaLanguage") || "english";
+
+      const normalizedLanguage =
+        savedLanguage.toLowerCase() === "hindi"
+          ? "hindi"
+          : "english";
+
+      setLanguage(normalizedLanguage);
+
       const savedHistory = JSON.parse(
         localStorage.getItem("clinovaInterviewHistory") || "{}"
       );
@@ -75,14 +228,17 @@ export default function Interview() {
       question.question || ""
     ).trim();
 
-    const lowerQuestion = questionText.toLowerCase();
+    const lowerQuestion =
+      questionText.toLowerCase();
 
     if (
       lowerQuestion.includes("how long") ||
       lowerQuestion.includes("since when") ||
       lowerQuestion.includes("how many days") ||
       lowerQuestion.includes("how many weeks") ||
-      lowerQuestion.includes("how many months")
+      lowerQuestion.includes("how many months") ||
+      lowerQuestion.includes("कितने समय") ||
+      lowerQuestion.includes("कब से")
     ) {
       type = "text";
     }
@@ -90,7 +246,8 @@ export default function Interview() {
     if (
       lowerQuestion.includes("severity") ||
       lowerQuestion.includes("how severe") ||
-      lowerQuestion.includes("how bad")
+      lowerQuestion.includes("how bad") ||
+      lowerQuestion.includes("गंभीरता")
     ) {
       type = "choice";
     }
@@ -99,7 +256,10 @@ export default function Interview() {
       lowerQuestion.includes("getting better") ||
       lowerQuestion.includes("getting worse") ||
       lowerQuestion.includes("changed over time") ||
-      lowerQuestion.includes("changing over time")
+      lowerQuestion.includes("changing over time") ||
+      lowerQuestion.includes("बेहतर") ||
+      lowerQuestion.includes("बदतर") ||
+      lowerQuestion.includes("समय के साथ")
     ) {
       type = "choice";
     }
@@ -115,29 +275,42 @@ export default function Interview() {
     if (
       lowerQuestion.includes("severity") ||
       lowerQuestion.includes("how severe") ||
-      lowerQuestion.includes("how bad")
+      lowerQuestion.includes("how bad") ||
+      lowerQuestion.includes("गंभीरता")
     ) {
       type = "choice";
-      options = ["Mild", "Moderate", "Severe"];
+
+      options = isHindi
+        ? ["हल्के", "मध्यम", "गंभीर"]
+        : ["Mild", "Moderate", "Severe"];
     }
 
     if (
       lowerQuestion.includes("getting better") ||
       lowerQuestion.includes("getting worse") ||
       lowerQuestion.includes("changed over time") ||
-      lowerQuestion.includes("changing over time")
+      lowerQuestion.includes("changing over time") ||
+      lowerQuestion.includes("बेहतर") ||
+      lowerQuestion.includes("बदतर") ||
+      lowerQuestion.includes("समय के साथ")
     ) {
       type = "choice";
 
-      options = [
-        "Getting better",
-        "Getting worse",
-        "About the same",
-      ];
+      options = isHindi
+        ? [
+            "बेहतर हो रहे हैं",
+            "बदतर हो रहे हैं",
+            "लगभग समान हैं",
+          ]
+        : [
+            "Getting better",
+            "Getting worse",
+            "About the same",
+          ];
     }
 
     if (type === "yesno") {
-      options = ["Yes", "No"];
+      options = isHindi ? ["हाँ", "नहीं"] : ["Yes", "No"];
     }
 
     if (type === "choice" && options.length < 2) {
@@ -148,7 +321,9 @@ export default function Interview() {
     return {
       question:
         questionText ||
-        "Please describe your symptoms.",
+        (isHindi
+          ? "कृपया अपने लक्षणों के बारे में बताएं।"
+          : "Please describe your symptoms."),
       type,
       key:
         question.key ||
@@ -164,11 +339,6 @@ export default function Interview() {
     );
   };
 
-  /*
-   * IMPORTANT:
-   * Interview खत्म होने के बाद अब सीधे documents पर नहीं जाएगा.
-   * पहले document choice screen दिखेगी.
-   */
   const finishInterview = (finalHistory) => {
     localStorage.setItem(
       "clinovaInterviewHistory",
@@ -181,10 +351,6 @@ export default function Interview() {
   };
 
   const handleDocumentChoice = (choice) => {
-    /*
-     * Clear previous free-report document state
-     * when user explicitly chooses no document.
-     */
     if (choice === "none") {
       localStorage.setItem(
         "clinovaDocuments",
@@ -200,10 +366,6 @@ export default function Interview() {
       return;
     }
 
-    /*
-     * User wants to upload a document.
-     * DocumentUpload handles actual upload/AI analysis.
-     */
     localStorage.setItem(
       "clinovaFreeReportMode",
       "true"
@@ -219,7 +381,7 @@ export default function Interview() {
 
   const startInterview = async () => {
     if (!symptomText.trim()) {
-      setError("Please enter your main symptom first.");
+      setError(t.noSymptom);
       return;
     }
 
@@ -249,7 +411,8 @@ export default function Interview() {
       try {
         result = await getAIQuestions(
           symptomText.trim(),
-          initialHistory
+          initialHistory,
+          language
         );
 
         console.log("Gemini first response:", result);
@@ -277,7 +440,8 @@ export default function Interview() {
           getNextFallbackQuestion(initialHistory);
 
         if (fallback) {
-          nextQuestion = normalizeQuestion(fallback);
+          nextQuestion =
+            normalizeQuestion(fallback);
         }
       }
 
@@ -304,14 +468,9 @@ export default function Interview() {
         setQuestionNumber(1);
         setStarted(true);
         setAnswer("");
-
-        setError(
-          "AI questions are temporarily unavailable. Using standard clinical questions."
-        );
+        setError(t.fallbackError);
       } else {
-        setError(
-          "Unable to start the interview. Please try again."
-        );
+        setError(t.interviewError);
       }
     } finally {
       setLoading(false);
@@ -324,7 +483,7 @@ export default function Interview() {
     const trimmedAnswer = answer.trim();
 
     if (!trimmedAnswer) {
-      setError("Please provide an answer.");
+      setError(t.noAnswer);
       return;
     }
 
@@ -349,7 +508,8 @@ export default function Interview() {
       try {
         result = await getAIQuestions(
           symptomText,
-          updatedHistory
+          updatedHistory,
+          language
         );
 
         console.log("Gemini next response:", result);
@@ -384,7 +544,8 @@ export default function Interview() {
           getNextFallbackQuestion(updatedHistory);
 
         if (fallback) {
-          nextQuestion = normalizeQuestion(fallback);
+          nextQuestion =
+            normalizeQuestion(fallback);
         }
       }
 
@@ -393,10 +554,6 @@ export default function Interview() {
           (key) => key !== "chiefComplaint"
         ).length;
 
-      /*
-       * Maximum 4 follow-up questions.
-       * After that, show document choice.
-       */
       if (
         answeredFollowUps >= 4 ||
         !nextQuestion
@@ -406,25 +563,31 @@ export default function Interview() {
       }
 
       setCurrentQuestion(nextQuestion);
-      setQuestionNumber((prev) => prev + 1);
+      setQuestionNumber(
+        (prev) => prev + 1
+      );
       setAnswer("");
     } catch (err) {
-      console.error("Interview answer error:", err);
+      console.error(
+        "Interview answer error:",
+        err
+      );
 
       const fallback =
-        getNextFallbackQuestion(updatedHistory);
+        getNextFallbackQuestion(
+          updatedHistory
+        );
 
       if (fallback) {
         const normalized =
           normalizeQuestion(fallback);
 
         setCurrentQuestion(normalized);
-        setQuestionNumber((prev) => prev + 1);
-        setAnswer("");
-
-        setError(
-          "AI is temporarily unavailable. Continuing with standard questions."
+        setQuestionNumber(
+          (prev) => prev + 1
         );
+        setAnswer("");
+        setError(t.answerFallback);
       } else {
         finishInterview(updatedHistory);
       }
@@ -444,9 +607,6 @@ export default function Interview() {
     }
   };
 
-  /*
-   * DOCUMENT CHOICE SCREEN
-   */
   if (showDocumentChoice) {
     return (
       <div
@@ -475,7 +635,7 @@ export default function Interview() {
               fontSize: "13px",
             }}
           >
-            STEP 2 • MEDICAL DOCUMENTS
+            {t.step2}
           </p>
 
           <h1
@@ -484,7 +644,7 @@ export default function Interview() {
               marginBottom: "10px",
             }}
           >
-            Do you have a medical document?
+            {t.documentQuestion}
           </h1>
 
           <p
@@ -493,10 +653,7 @@ export default function Interview() {
               lineHeight: 1.6,
             }}
           >
-            You can add a previous medical report,
-            prescription, lab report or scan. Clinova
-            can analyze the document with AI before
-            preparing your pre-consultation report.
+            {t.documentDescription}
           </p>
 
           <div
@@ -526,7 +683,7 @@ export default function Interview() {
                   color: "#084C44",
                 }}
               >
-                📄 Yes, I have a document
+                {t.yesDocument}
               </strong>
 
               <span
@@ -537,8 +694,7 @@ export default function Interview() {
                   lineHeight: 1.5,
                 }}
               >
-                Upload it and optionally analyze it
-                with Clinova AI.
+                {t.uploadDescription}
               </span>
             </button>
 
@@ -562,7 +718,7 @@ export default function Interview() {
                   color: "#1F2937",
                 }}
               >
-                ⏭️ I don't have a document
+                {t.noDocument}
               </strong>
 
               <span
@@ -572,8 +728,7 @@ export default function Interview() {
                   color: "#6B7280",
                 }}
               >
-                Continue directly and generate my
-                pre-consultation report.
+                {t.continueDescription}
               </span>
             </button>
           </div>
@@ -586,17 +741,13 @@ export default function Interview() {
               fontSize: "12px",
             }}
           >
-            Documents are optional. You can generate
-            your report without uploading anything.
+            {t.optional}
           </p>
         </div>
       </div>
     );
   }
 
-  /*
-   * START SCREEN
-   */
   if (!started) {
     return (
       <div
@@ -625,7 +776,7 @@ export default function Interview() {
               fontSize: "13px",
             }}
           >
-            STEP 1 • CLINICAL INTERVIEW
+            {t.step1}
           </p>
 
           <h1
@@ -634,7 +785,7 @@ export default function Interview() {
               marginBottom: "10px",
             }}
           >
-            Tell us about your symptoms
+            {t.tellSymptoms}
           </h1>
 
           <p
@@ -643,8 +794,7 @@ export default function Interview() {
               lineHeight: 1.6,
             }}
           >
-            Clinova will ask a few relevant questions
-            to organize information for your doctor.
+            {t.intro}
           </p>
 
           <textarea
@@ -652,7 +802,7 @@ export default function Interview() {
             onChange={(e) =>
               setSymptomText(e.target.value)
             }
-            placeholder="For example: I have been having a headache since yesterday..."
+            placeholder={t.placeholder}
             rows={5}
             style={{
               width: "100%",
@@ -700,17 +850,14 @@ export default function Interview() {
             }}
           >
             {loading
-              ? "🤖 Preparing questions..."
-              : "Start Clinical Interview →"}
+              ? t.preparing
+              : t.start}
           </button>
         </div>
       </div>
     );
   }
 
-  /*
-   * INTERVIEW SCREEN
-   */
   return (
     <div
       style={{
@@ -738,7 +885,7 @@ export default function Interview() {
             fontSize: "13px",
           }}
         >
-          CLINOVA • ADAPTIVE INTERVIEW
+          {t.smartInterview}
         </p>
 
         <div
@@ -756,7 +903,7 @@ export default function Interview() {
               color: "#1F2937",
             }}
           >
-            Clinical Questions
+            {t.clinicalQuestions}
           </h1>
 
           <span
@@ -766,7 +913,7 @@ export default function Interview() {
               whiteSpace: "nowrap",
             }}
           >
-            Question {questionNumber}
+            {t.question} {questionNumber}
           </span>
         </div>
 
@@ -779,7 +926,7 @@ export default function Interview() {
             color: "#084C44",
           }}
         >
-          <strong>Main complaint:</strong>{" "}
+          <strong>{t.mainComplaint}</strong>{" "}
           {symptomText}
         </div>
 
@@ -805,7 +952,7 @@ export default function Interview() {
                   setAnswer(e.target.value)
                 }
                 onKeyDown={handleKeyDown}
-                placeholder="Type your answer here..."
+                placeholder={t.answerPlaceholder}
                 rows={4}
                 autoFocus
                 style={{
@@ -826,37 +973,40 @@ export default function Interview() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
+                  gridTemplateColumns:
+                    "1fr 1fr",
                   gap: "12px",
                   marginTop: "20px",
                 }}
               >
-                {["Yes", "No"].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() =>
-                      setAnswer(option)
-                    }
-                    style={{
-                      padding: "15px",
-                      borderRadius: "12px",
-                      border:
-                        answer === option
-                          ? "2px solid #0E6E64"
-                          : "1px solid #D1D5DB",
-                      background:
-                        answer === option
-                          ? "#EAF5F3"
-                          : "#FFFFFF",
-                      color: "#1F2937",
-                      fontWeight: "700",
-                      fontSize: "15px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
+                {currentQuestion.options.map(
+                  (option) => (
+                    <button
+                      key={option}
+                      onClick={() =>
+                        setAnswer(option)
+                      }
+                      style={{
+                        padding: "15px",
+                        borderRadius: "12px",
+                        border:
+                          answer === option
+                            ? "2px solid #0E6E64"
+                            : "1px solid #D1D5DB",
+                        background:
+                          answer === option
+                            ? "#EAF5F3"
+                            : "#FFFFFF",
+                        color: "#1F2937",
+                        fontWeight: "700",
+                        fontSize: "15px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {option}
+                    </button>
+                  )
+                )}
               </div>
             )}
 
@@ -918,7 +1068,9 @@ export default function Interview() {
 
             <button
               onClick={submitAnswer}
-              disabled={!answer.trim() || loading}
+              disabled={
+                !answer.trim() || loading
+              }
               style={{
                 width: "100%",
                 marginTop: "22px",
@@ -939,8 +1091,8 @@ export default function Interview() {
               }}
             >
               {loading
-                ? "🤖 Thinking..."
-                : "Continue →"}
+                ? t.thinking
+                : t.continue}
             </button>
           </div>
         )}
@@ -954,10 +1106,7 @@ export default function Interview() {
             textAlign: "center",
           }}
         >
-          Clinova provides an AI-generated
-          pre-consultation draft. It does not provide
-          a diagnosis or replace a qualified
-          healthcare professional.
+          {t.disclaimer}
         </p>
       </div>
     </div>

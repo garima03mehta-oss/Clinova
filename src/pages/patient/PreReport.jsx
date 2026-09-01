@@ -62,12 +62,34 @@ const getDocumentsFromDB = async () => {
 
 /*
  * =========================================================
+ * LANGUAGE HELPER
+ * =========================================================
+ */
+
+const getLanguage = () => {
+  const language =
+    localStorage.getItem("clinovaLanguage") || "en";
+
+  const normalized = language
+    .toString()
+    .toLowerCase()
+    .trim();
+
+  return ["hi", "hindi", "हिंदी"].includes(normalized)
+    ? "hi"
+    : "en";
+};
+
+/*
+ * =========================================================
  * COMPONENT
  * =========================================================
  */
 
 export default function PreReport() {
   const navigate = useNavigate();
+
+  const [language] = useState(getLanguage);
 
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] =
@@ -85,6 +107,160 @@ export default function PreReport() {
 
   const [error, setError] = useState("");
 
+  const isHindi = language === "hi";
+
+  /*
+   * =========================================================
+   * TRANSLATIONS
+   * =========================================================
+   */
+
+  const t = {
+    backToDashboard: isHindi
+      ? "← डैशबोर्ड पर वापस जाएँ"
+      : "← Back to Dashboard",
+
+    reportGeneration: isHindi
+      ? "CLINOVA • रिपोर्ट जनरेशन"
+      : "CLINOVA • REPORT GENERATION",
+
+    generatePreReport: isHindi
+      ? "प्री-कंसल्टेशन रिपोर्ट तैयार करें"
+      : "Generate Pre-Consultation Report",
+
+    reportDescription: isHindi
+      ? "अपने सेव किए गए मेडिकल दस्तावेज़ में से एक दस्तावेज़ चुनें। Clinova आपके चुने गए दस्तावेज़ और क्लिनिकल इंटरव्यू की जानकारी का उपयोग करके रिपोर्ट तैयार करेगा।"
+      : "Select a medical document from your saved documents. Clinova will use the selected document together with your clinical interview to prepare the report.",
+
+    selectDocument: isHindi
+      ? "📄 मेडिकल दस्तावेज़ चुनें"
+      : "📄 Select a Medical Document",
+
+    selectDocumentDescription: isHindi
+      ? "अपने पहले से अपलोड किए गए दस्तावेज़ों में से चुनें।"
+      : "Choose from documents you have already uploaded.",
+
+    document: isHindi
+      ? "दस्तावेज़"
+      : "Document",
+
+    documents: isHindi
+      ? "दस्तावेज़"
+      : "Documents",
+
+    loadingDocuments: isHindi
+      ? "आपके सेव किए गए दस्तावेज़ लोड हो रहे हैं..."
+      : "Loading your saved documents...",
+
+    noDocuments: isHindi
+      ? "कोई सेव किया गया दस्तावेज़ नहीं मिला"
+      : "No saved documents",
+
+    noDocumentsDescription: isHindi
+      ? "कृपया पहले Documents सेक्शन से अपना मेडिकल दस्तावेज़ अपलोड करें।"
+      : "Please upload your medical document from the Documents section first.",
+
+    goToDocuments: isHindi
+      ? "📤 दस्तावेज़ों पर जाएँ"
+      : "📤 Go to Documents",
+
+    file: isHindi
+      ? "फ़ाइल"
+      : "File",
+
+    purpose: isHindi
+      ? "उद्देश्य"
+      : "Purpose",
+
+    added: isHindi
+      ? "जोड़ा गया"
+      : "Added",
+
+    aiAnalyzed: isHindi
+      ? "🤖 AI द्वारा विश्लेषित"
+      : "🤖 AI ANALYZED",
+
+    selected: isHindi
+      ? "✓ चुना गया"
+      : "✓ SELECTED",
+
+    generateReport: isHindi
+      ? "📋 रिपोर्ट तैयार करें"
+      : "📋 Generate Report",
+
+    generatingReport: isHindi
+      ? "🤖 रिपोर्ट तैयार की जा रही है..."
+      : "🤖 Generating Report...",
+
+    uploadFirst: isHindi
+      ? "अपना दस्तावेज़ नहीं दिख रहा? पहले उसे Documents सेक्शन से अपलोड करें।"
+      : "Don't see your document? Upload it first from the Documents section.",
+
+    myDocuments: isHindi
+      ? "📤 मेरे दस्तावेज़ों पर जाएँ"
+      : "📤 Go to My Documents",
+
+    preConsultation: isHindi
+      ? "CLINOVA • प्री-कंसल्टेशन"
+      : "CLINOVA • PRE-CONSULTATION",
+
+    preConsultationReport: isHindi
+      ? "प्री-कंसल्टेशन रिपोर्ट"
+      : "Pre-Consultation Report",
+
+    basedOn: isHindi
+      ? "आधारित दस्तावेज़:"
+      : "Based on:",
+
+    aiDraft: isHindi
+      ? "AI ड्राफ्ट • सत्यापित नहीं"
+      : "AI DRAFT • UNVERIFIED",
+
+    important: isHindi
+      ? "महत्वपूर्ण:"
+      : "Important:",
+
+    reportWarning: isHindi
+      ? "यह उपलब्ध कराई गई जानकारी के आधार पर तैयार की गई AI-जनरेटेड प्रारंभिक रिपोर्ट है। यह कोई निदान या उपचार संबंधी सलाह नहीं है और इसे योग्य स्वास्थ्य विशेषज्ञ द्वारा समीक्षा किया जाना चाहिए।"
+      : "This is an AI-generated draft based on the information provided. It is not a diagnosis or treatment recommendation and should be reviewed by a qualified healthcare professional.",
+
+    chooseAnother: isHindi
+      ? "📄 दूसरा दस्तावेज़ चुनें"
+      : "📄 Choose Another Document",
+
+    shareWithDoctor: isHindi
+      ? "🔐 डॉक्टर के साथ साझा करें"
+      : "🔐 Share with Doctor",
+
+    dashboard: isHindi
+      ? "🏠 डैशबोर्ड"
+      : "🏠 Dashboard",
+
+    footer: isHindi
+      ? "आपकी रिपोर्ट एक प्रारंभिक AI-जनरेटेड ड्राफ्ट है। कृपया इसकी समीक्षा किसी योग्य स्वास्थ्य विशेषज्ञ से करवाएँ।"
+      : "Your report is a preliminary AI-generated draft. Please have it reviewed by a qualified healthcare professional.",
+
+    noDate: isHindi
+      ? "तारीख उपलब्ध नहीं"
+      : "Date not available",
+
+    loadError: isHindi
+      ? "आपके सेव किए गए दस्तावेज़ लोड नहीं हो सके।"
+      : "Unable to load your saved documents.",
+
+    selectDocumentError: isHindi
+      ? "कृपया पहले एक मेडिकल दस्तावेज़ चुनें।"
+      : "Please select a medical document first.",
+
+    reportError: isHindi
+      ? "रिपोर्ट तैयार नहीं हो सकी।"
+      : "Unable to generate pre-report.",
+
+    noReport: isHindi
+      ? "कोई प्री-रिपोर्ट प्राप्त नहीं हुई।"
+      : "No pre-report was returned.",
+  };
+
   /*
    * =========================================================
    * LOAD SAVED DOCUMENTS
@@ -100,30 +276,20 @@ export default function PreReport() {
       setLoadingDocuments(true);
       setError("");
 
-      const saved =
-        await getDocumentsFromDB();
+      const saved = await getDocumentsFromDB();
 
       const patientId =
         localStorage.getItem(
           "clinovaPatientId"
         );
 
-      /*
-       * Show only documents belonging to
-       * the current patient.
-       *
-       * Older documents without patientId
-       * are also kept visible for compatibility.
-       */
-
-      const patientDocuments =
-        patientId
-          ? saved.filter(
-              (document) =>
-                !document.patientId ||
-                document.patientId === patientId
-            )
-          : saved;
+      const patientDocuments = patientId
+        ? saved.filter(
+            (document) =>
+              !document.patientId ||
+              document.patientId === patientId
+          )
+        : saved;
 
       patientDocuments.sort(
         (a, b) =>
@@ -138,9 +304,7 @@ export default function PreReport() {
         err
       );
 
-      setError(
-        "Unable to load your saved documents."
-      );
+      setError(t.loadError);
     } finally {
       setLoadingDocuments(false);
     }
@@ -196,10 +360,7 @@ export default function PreReport() {
 
   const generateReport = async () => {
     if (!selectedDocument) {
-      setError(
-        "Please select a medical document first."
-      );
-
+      setError(t.selectDocumentError);
       return;
     }
 
@@ -214,17 +375,6 @@ export default function PreReport() {
           "clinovaInterviewHistory",
           {}
         );
-
-      /*
-       * IMPORTANT:
-       *
-       * The report receives ONLY the selected
-       * document instead of all documents.
-       *
-       * This fixes the old behaviour where
-       * clinovaDocuments contained only the
-       * latest AI extraction.
-       */
 
       const documentForReport = {
         id: selectedDocument.id,
@@ -272,15 +422,20 @@ export default function PreReport() {
           body: JSON.stringify({
             history,
 
-            /*
-             * Keep the API structure simple:
-             * documents is an array containing
-             * ONLY the selected document.
-             */
-
             documents: [
               documentForReport,
             ],
+
+            /*
+             * IMPORTANT:
+             * Tell backend/Gemini which language
+             * the patient selected.
+             */
+            language: language,
+
+            languageName: isHindi
+              ? "Hindi"
+              : "English",
           }),
         }
       );
@@ -297,34 +452,21 @@ export default function PreReport() {
 
       if (!response.ok) {
         throw new Error(
-          data?.error ||
-            "Unable to generate pre-report."
+          data?.error || t.reportError
         );
       }
 
       if (!data?.report) {
-        throw new Error(
-          "No pre-report was returned."
-        );
+        throw new Error(t.noReport);
       }
 
       setReport(data.report);
       setShowReport(true);
 
-      /*
-       * Keep existing localStorage key
-       * for ShareAccess and other pages.
-       */
-
       localStorage.setItem(
         "clinovaPreReport",
         data.report
       );
-
-      /*
-       * Also remember which document was used
-       * for this report.
-       */
 
       localStorage.setItem(
         "clinovaSelectedReportDocument",
@@ -339,8 +481,7 @@ export default function PreReport() {
       );
 
       setError(
-        err?.message ||
-          "Unable to generate pre-report."
+        err?.message || t.reportError
       );
     } finally {
       setGenerating(false);
@@ -354,9 +495,7 @@ export default function PreReport() {
    */
 
   const goToDashboard = () => {
-    navigate(
-      "/patient/dashboard"
-    );
+    navigate("/patient/dashboard");
   };
 
   const goToDocuments = () => {
@@ -383,17 +522,12 @@ export default function PreReport() {
    * =========================================================
    */
 
-  const formatFileSize = (
-    bytes
-  ) => {
+  const formatFileSize = (bytes) => {
     if (!bytes) {
       return "0 KB";
     }
 
-    if (
-      bytes <
-      1024 * 1024
-    ) {
+    if (bytes < 1024 * 1024) {
       return `${(
         bytes / 1024
       ).toFixed(1)} KB`;
@@ -405,17 +539,15 @@ export default function PreReport() {
     ).toFixed(2)} MB`;
   };
 
-  const formatDate = (
-    timestamp
-  ) => {
+  const formatDate = (timestamp) => {
     if (!timestamp) {
-      return "";
+      return t.noDate;
     }
 
     return new Date(
       timestamp
     ).toLocaleDateString(
-      "en-IN",
+      isHindi ? "hi-IN" : "en-IN",
       {
         day: "2-digit",
         month: "short",
@@ -469,7 +601,7 @@ export default function PreReport() {
               marginBottom: "20px",
             }}
           >
-            ← Back to Dashboard
+            {t.backToDashboard}
           </button>
 
           <p
@@ -480,7 +612,7 @@ export default function PreReport() {
               marginBottom: "8px",
             }}
           >
-            CLINOVA • REPORT GENERATION
+            {t.reportGeneration}
           </p>
 
           <h1
@@ -490,7 +622,7 @@ export default function PreReport() {
               fontSize: "30px",
             }}
           >
-            Generate Pre-Consultation Report
+            {t.generatePreReport}
           </h1>
 
           <p
@@ -501,11 +633,7 @@ export default function PreReport() {
               marginBottom: 0,
             }}
           >
-            Select a medical document from your
-            saved documents. Clinova will use the
-            selected document together with your
-            clinical interview to prepare the
-            report.
+            {t.reportDescription}
           </p>
         </div>
 
@@ -558,7 +686,7 @@ export default function PreReport() {
                     color: "#1F2937",
                   }}
                 >
-                  📄 Select a Medical Document
+                  {t.selectDocument}
                 </h2>
 
                 <p
@@ -567,8 +695,7 @@ export default function PreReport() {
                     marginBottom: 0,
                   }}
                 >
-                  Choose from documents you have
-                  already uploaded.
+                  {t.selectDocumentDescription}
                 </p>
               </div>
 
@@ -584,8 +711,8 @@ export default function PreReport() {
               >
                 {documents.length}{" "}
                 {documents.length === 1
-                  ? "Document"
-                  : "Documents"}
+                  ? t.document
+                  : t.documents}
               </span>
             </div>
 
@@ -596,7 +723,7 @@ export default function PreReport() {
                   color: "#6B7280",
                 }}
               >
-                Loading your saved documents...
+                {t.loadingDocuments}
               </div>
             ) : documents.length === 0 ? (
               <div
@@ -623,7 +750,7 @@ export default function PreReport() {
                     marginBottom: "8px",
                   }}
                 >
-                  No saved documents
+                  {t.noDocuments}
                 </h3>
 
                 <p
@@ -633,9 +760,7 @@ export default function PreReport() {
                     lineHeight: 1.5,
                   }}
                 >
-                  Please upload your medical
-                  document from the Documents section
-                  first.
+                  {t.noDocumentsDescription}
                 </p>
 
                 <button
@@ -651,7 +776,7 @@ export default function PreReport() {
                     cursor: "pointer",
                   }}
                 >
-                  📤 Go to Documents
+                  {t.goToDocuments}
                 </button>
               </div>
             ) : (
@@ -730,7 +855,7 @@ export default function PreReport() {
                                   "13px",
                               }}
                             >
-                              File:{" "}
+                              {t.file}:{" "}
                               {
                                 document.fileName
                               }
@@ -747,7 +872,7 @@ export default function PreReport() {
                                     "13px",
                                 }}
                               >
-                                Purpose:{" "}
+                                {t.purpose}:{" "}
                                 {
                                   document.purpose
                                 }
@@ -763,7 +888,7 @@ export default function PreReport() {
                                   "12px",
                               }}
                             >
-                              Added:{" "}
+                              {t.added}:{" "}
                               {formatDate(
                                 document.createdAt
                               )}{" "}
@@ -803,7 +928,7 @@ export default function PreReport() {
                                     "nowrap",
                                 }}
                               >
-                                🤖 AI ANALYZED
+                                {t.aiAnalyzed}
                               </span>
                             )}
 
@@ -826,7 +951,7 @@ export default function PreReport() {
                                     "nowrap",
                                 }}
                               >
-                                ✓ SELECTED
+                                {t.selected}
                               </span>
                             )}
                           </div>
@@ -872,8 +997,8 @@ export default function PreReport() {
                 }}
               >
                 {generating
-                  ? "🤖 Generating Report..."
-                  : "📋 Generate Report"}
+                  ? t.generatingReport
+                  : t.generateReport}
               </button>
             )}
 
@@ -885,16 +1010,14 @@ export default function PreReport() {
                 fontSize: "12px",
               }}
             >
-              Don't see your document? Upload it
-              first from the Documents section.
+              {t.uploadFirst}
             </p>
 
             <button
               onClick={goToDocuments}
               style={{
                 display: "block",
-                margin:
-                  "0 auto",
+                margin: "0 auto",
                 border: "none",
                 background:
                   "transparent",
@@ -903,7 +1026,7 @@ export default function PreReport() {
                 cursor: "pointer",
               }}
             >
-              📤 Go to My Documents
+              {t.myDocuments}
             </button>
           </div>
         )}
@@ -943,7 +1066,7 @@ export default function PreReport() {
                     marginBottom: "8px",
                   }}
                 >
-                  CLINOVA • PRE-CONSULTATION
+                  {t.preConsultation}
                 </p>
 
                 <h1
@@ -953,7 +1076,7 @@ export default function PreReport() {
                     fontSize: "30px",
                   }}
                 >
-                  Pre-Consultation Report
+                  {t.preConsultationReport}
                 </h1>
 
                 {selectedDocument && (
@@ -963,7 +1086,7 @@ export default function PreReport() {
                       marginTop: "10px",
                     }}
                   >
-                    Based on:{" "}
+                    {t.basedOn}{" "}
                     <strong>
                       {selectedDocument.documentName ||
                         selectedDocument.fileName}
@@ -982,7 +1105,7 @@ export default function PreReport() {
                   fontWeight: "700",
                 }}
               >
-                AI DRAFT • UNVERIFIED
+                {t.aiDraft}
               </span>
             </div>
 
@@ -1016,13 +1139,9 @@ export default function PreReport() {
               }}
             >
               <strong>
-                Important:
+                {t.important}
               </strong>{" "}
-              This is an AI-generated draft based
-              on the information provided. It is not
-              a diagnosis or treatment
-              recommendation and should be reviewed
-              by a qualified healthcare professional.
+              {t.reportWarning}
             </div>
 
             {/* ACTION BUTTONS */}
@@ -1053,7 +1172,7 @@ export default function PreReport() {
                   cursor: "pointer",
                 }}
               >
-                📄 Choose Another Document
+                {t.chooseAnother}
               </button>
 
               <button
@@ -1069,7 +1188,7 @@ export default function PreReport() {
                   cursor: "pointer",
                 }}
               >
-                🔐 Share with Doctor
+                {t.shareWithDoctor}
               </button>
 
               <button
@@ -1086,7 +1205,7 @@ export default function PreReport() {
                   cursor: "pointer",
                 }}
               >
-                🏠 Dashboard
+                {t.dashboard}
               </button>
             </div>
           </div>
@@ -1101,9 +1220,7 @@ export default function PreReport() {
             lineHeight: 1.5,
           }}
         >
-          Your report is a preliminary AI-generated
-          draft. Please have it reviewed by a qualified
-          healthcare professional.
+          {t.footer}
         </p>
       </div>
     </div>

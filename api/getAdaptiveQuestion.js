@@ -9,133 +9,235 @@ export default async function handler(req, res) {
     symptomText = "",
     history = {},
     careSystem = "Allopathy",
+    language = "english",
   } = req.body || {};
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const selectedLanguage =
+    String(language).toLowerCase() === "hindi"
+      ? "hindi"
+      : "english";
+
+  const apiKey =
+    process.env.GEMINI_API_KEY;
 
   const chiefComplaint =
     history.chiefComplaint ||
     symptomText ||
     "Not provided";
 
-  const historyEntries = Object.entries(history).filter(
-    ([key]) => key !== "chiefComplaint"
-  );
+  const historyEntries =
+    Object.entries(history).filter(
+      ([key]) => key !== "chiefComplaint"
+    );
 
-  const answeredCount = historyEntries.length;
+  const answeredCount =
+    historyEntries.length;
 
-  /*
-   * Keep the already asked questions/answers visible to Gemini
-   * so that it does not repeat them.
-   */
   const historyText =
     historyEntries.length > 0
       ? historyEntries
-          .map(([key, value]) => `${key}: ${String(value)}`)
+          .map(
+            ([key, value]) =>
+              `${key}: ${String(value)}`
+          )
           .join("\n")
       : "None yet";
 
   /*
    * ---------------------------------------------------------
-   * SMART FALLBACK QUESTIONS
+   * FALLBACK QUESTIONS
    * ---------------------------------------------------------
-   *
-   * These are used only when Gemini is unavailable,
-   * quota is exhausted, or the API returns an error.
-   *
-   * IMPORTANT:
-   * Different questions have different input types.
    */
-  const fallbackQuestions = [
-    {
-      question:
-        "How long have you been experiencing these symptoms?",
-      type: "text",
-      key: "symptom_duration",
-    },
-    {
-      question:
-        "How would you describe the severity of your symptoms?",
-      type: "choice",
-      options: ["Mild", "Moderate", "Severe"],
-      key: "symptom_severity",
-    },
-    {
-      question:
-        "Are your symptoms getting better, staying the same, or getting worse?",
-      type: "choice",
-      options: ["Better", "Same", "Worse"],
-      key: "symptom_progression",
-    },
-    {
-      question:
-        "What usually makes your symptoms better or worse?",
-      type: "text",
-      key: "symptom_triggers",
-    },
-    {
-      question:
-        "Are there any other symptoms happening along with your main complaint?",
-      type: "text",
-      key: "associated_symptoms",
-    },
-    {
-      question:
-        "Are your symptoms affecting your normal daily activities?",
-      type: "yesno",
-      key: "daily_activity_impact",
-    },
-    {
-      question:
-        "Have you experienced a similar problem before?",
-      type: "yesno",
-      key: "previous_episode",
-    },
-    {
-      question:
-        "Have you already taken or tried anything for these symptoms?",
-      type: "text",
-      key: "previous_action",
-    },
-  ];
+
+  const fallbackQuestions = {
+    english: [
+      {
+        question:
+          "How long have you been experiencing these symptoms?",
+        type: "text",
+        key: "symptom_duration",
+        options: [],
+      },
+      {
+        question:
+          "How would you describe the severity of your symptoms?",
+        type: "choice",
+        options: [
+          "Mild",
+          "Moderate",
+          "Severe",
+        ],
+        key: "symptom_severity",
+      },
+      {
+        question:
+          "Are your symptoms getting better, staying the same, or getting worse?",
+        type: "choice",
+        options: [
+          "Getting better",
+          "About the same",
+          "Getting worse",
+        ],
+        key: "symptom_progression",
+      },
+      {
+        question:
+          "What usually makes your symptoms better or worse?",
+        type: "text",
+        key: "symptom_triggers",
+        options: [],
+      },
+      {
+        question:
+          "Are there any other symptoms happening along with your main complaint?",
+        type: "text",
+        key: "associated_symptoms",
+        options: [],
+      },
+      {
+        question:
+          "Are your symptoms affecting your normal daily activities?",
+        type: "yesno",
+        key: "daily_activity_impact",
+        options: [
+          "Yes",
+          "No",
+        ],
+      },
+      {
+        question:
+          "Have you experienced a similar problem before?",
+        type: "yesno",
+        key: "previous_episode",
+        options: [
+          "Yes",
+          "No",
+        ],
+      },
+      {
+        question:
+          "Have you already taken or tried anything for these symptoms?",
+        type: "text",
+        key: "previous_action",
+        options: [],
+      },
+    ],
+
+    hindi: [
+      {
+        question:
+          "आप इन लक्षणों को कितने समय से अनुभव कर रहे हैं?",
+        type: "text",
+        key: "symptom_duration",
+        options: [],
+      },
+      {
+        question:
+          "आपके लक्षणों की गंभीरता कैसी है?",
+        type: "choice",
+        options: [
+          "हल्के",
+          "मध्यम",
+          "गंभीर",
+        ],
+        key: "symptom_severity",
+      },
+      {
+        question:
+          "आपके लक्षण बेहतर हो रहे हैं, वैसे ही हैं या बदतर हो रहे हैं?",
+        type: "choice",
+        options: [
+          "बेहतर हो रहे हैं",
+          "लगभग समान हैं",
+          "बदतर हो रहे हैं",
+        ],
+        key: "symptom_progression",
+      },
+      {
+        question:
+          "ऐसी कौन सी चीजें हैं जिनसे आपके लक्षण बेहतर या बदतर होते हैं?",
+        type: "text",
+        key: "symptom_triggers",
+        options: [],
+      },
+      {
+        question:
+          "क्या आपके मुख्य लक्षण के साथ कोई अन्य लक्षण भी हो रहे हैं?",
+        type: "text",
+        key: "associated_symptoms",
+        options: [],
+      },
+      {
+        question:
+          "क्या आपके लक्षण आपकी सामान्य दैनिक गतिविधियों को प्रभावित कर रहे हैं?",
+        type: "yesno",
+        key: "daily_activity_impact",
+        options: [
+          "हाँ",
+          "नहीं",
+        ],
+      },
+      {
+        question:
+          "क्या आपको पहले भी ऐसी ही समस्या हुई है?",
+        type: "yesno",
+        key: "previous_episode",
+        options: [
+          "हाँ",
+          "नहीं",
+        ],
+      },
+      {
+        question:
+          "क्या आपने इन लक्षणों के लिए पहले से कुछ लिया या आजमाया है?",
+        type: "text",
+        key: "previous_action",
+        options: [],
+      },
+    ],
+  };
+
+  const answeredKeys =
+    new Set(
+      historyEntries.map(
+        ([key]) => key
+      )
+    );
+
+  const fallbackQuestion =
+    fallbackQuestions[
+      selectedLanguage
+    ].find(
+      (question) =>
+        !answeredKeys.has(
+          question.key
+        )
+    );
 
   /*
-   * Find which fallback questions have already been answered.
+   * No API key
    */
-  const answeredKeys = new Set(
-    historyEntries.map(([key]) => key)
-  );
 
-  /*
-   * Pick the first fallback question that has not
-   * already been asked.
-   */
-  const fallbackQuestion = fallbackQuestions.find(
-    (question) => !answeredKeys.has(question.key)
-  );
-
-  /*
-   * If we don't have an API key, immediately use fallback.
-   */
   if (!apiKey) {
     console.warn(
-      "GEMINI_API_KEY missing. Using fallback question."
+      "GEMINI_API_KEY missing. Using fallback."
     );
 
     return res.status(200).json({
       chiefComplaint,
       source: "fallback",
       followUpQuestions:
-        answeredCount >= 4 || !fallbackQuestion
+        answeredCount >= 4 ||
+        !fallbackQuestion
           ? []
           : [fallbackQuestion],
     });
   }
 
   /*
-   * We want only a limited number of adaptive questions.
-   * Four is enough for a useful pre-consultation draft.
+   * Maximum 4 questions
    */
+
   if (answeredCount >= 4) {
     return res.status(200).json({
       chiefComplaint,
@@ -146,19 +248,64 @@ export default async function handler(req, res) {
 
   /*
    * ---------------------------------------------------------
+   * LANGUAGE INSTRUCTION
+   * ---------------------------------------------------------
+   */
+
+  const languageInstruction =
+    selectedLanguage === "hindi"
+      ? `
+LANGUAGE REQUIREMENT:
+
+The patient selected Hindi.
+
+You MUST generate the question in natural,
+easy-to-understand Hindi.
+
+The question text MUST be in Hindi.
+
+Choice options MUST also be in Hindi.
+
+Do NOT return English questions.
+
+Medical terms may remain in commonly understood
+English form only when a natural Hindi equivalent
+would be confusing.
+`
+      : `
+LANGUAGE REQUIREMENT:
+
+The patient selected English.
+
+You MUST generate the question in clear,
+simple English.
+
+The question text MUST be in English.
+
+Choice options MUST also be in English.
+
+Do NOT return Hindi questions.
+`;
+
+  /*
+   * ---------------------------------------------------------
    * GEMINI PROMPT
    * ---------------------------------------------------------
    */
+
   const prompt = `
 You are Clinova, an AI clinical intake assistant.
 
 You are NOT a doctor.
+
 You must NOT diagnose.
 You must NOT prescribe medicines.
 You must NOT recommend treatment.
 
-Your job is to ask ONE useful follow-up question during
-a patient pre-consultation interview.
+Your job is to ask ONE useful follow-up question
+during a patient pre-consultation interview.
+
+${languageInstruction}
 
 CARE SYSTEM:
 ${careSystem}
@@ -173,12 +320,18 @@ NUMBER OF ANSWERS ALREADY COLLECTED:
 ${answeredCount}
 
 IMPORTANT:
-Do NOT repeat a question whose information is already available.
 
-The next question should provide useful information for
-a doctor reviewing the eventual pre-consultation report.
+Do NOT repeat information that has already been
+collected.
+
+Ask only ONE question.
+
+The next question should provide useful information
+for a doctor reviewing the eventual pre-consultation
+report.
 
 Prioritize information such as:
+
 - duration
 - severity
 - progression
@@ -186,46 +339,43 @@ Prioritize information such as:
 - triggers or relieving factors
 - effect on daily activities
 - previous similar episodes
-- anything else directly relevant to the complaint
+- other directly relevant information
 
-Choose the most relevant question based on the actual complaint.
+Choose the most relevant question based on the
+actual complaint.
+
 Do not blindly follow a fixed sequence.
 
 QUESTION TYPES:
 
 1. "text"
-Use this when the patient needs to type a free-form answer.
-Examples:
-- How long have you been experiencing these symptoms?
-- What makes your symptoms better or worse?
-- What other symptoms are you experiencing?
+
+Use this when the patient needs to type a
+free-form answer.
 
 2. "yesno"
-Use this ONLY when the answer genuinely needs Yes or No.
-Examples:
-- Have you experienced this problem before?
-- Are the symptoms affecting your sleep?
+
+Use this ONLY when the answer genuinely needs
+Yes or No.
 
 3. "choice"
-Use this when there are a small number of clear options.
-Examples:
-- How severe are your symptoms?
-- Are your symptoms getting better, worse, or staying the same?
+
+Use this when there are a small number of clear
+options.
 
 For "choice", provide 2 to 5 short options.
 
-VERY IMPORTANT:
+IMPORTANT:
+
 Do NOT label every question as "yesno".
 
 For example:
-"How long have you been experiencing these symptoms?"
-MUST be type "text".
 
-"How would you describe the severity of your symptoms?"
-SHOULD be type "choice".
+A duration question must be "text".
 
-"Are your symptoms getting better?"
-CAN be type "choice" if the options are Better, Same, Worse.
+A severity question should be "choice".
+
+A progression question should usually be "choice".
 
 Return ONLY valid JSON.
 
@@ -243,7 +393,7 @@ Exact format:
   ]
 }
 
-For a yes/no question:
+For yes/no:
 
 {
   "chiefComplaint": "short category name",
@@ -257,7 +407,7 @@ For a yes/no question:
   ]
 }
 
-For a multiple-choice question:
+For multiple choice:
 
 {
   "chiefComplaint": "short category name",
@@ -276,37 +426,40 @@ Do not include code fences.
 `;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.4,
-            responseMimeType: "application/json",
+    const response =
+      await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
           },
-        }),
-      }
-    );
 
-    const data = await response.json();
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
 
-    /*
-     * Gemini quota exhausted / API error:
-     * use fallback instead of breaking the interview.
-     */
+            generationConfig: {
+              temperature: 0.4,
+              responseMimeType:
+                "application/json",
+            },
+          }),
+        }
+      );
+
+    const data =
+      await response.json();
+
     if (!response.ok) {
       console.error(
         "GEMINI ACTUAL ERROR:",
@@ -328,7 +481,7 @@ Do not include code fences.
 
     if (!rawText) {
       console.warn(
-        "Gemini returned empty response. Using fallback."
+        "Gemini returned empty response."
       );
 
       return res.status(200).json({
@@ -341,15 +494,23 @@ Do not include code fences.
       });
     }
 
-    const cleaned = rawText
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
+    const cleaned =
+      rawText
+        .replace(
+          /```json/gi,
+          ""
+        )
+        .replace(
+          /```/g,
+          ""
+        )
+        .trim();
 
     let parsed;
 
     try {
-      parsed = JSON.parse(cleaned);
+      parsed =
+        JSON.parse(cleaned);
     } catch (parseError) {
       console.error(
         "Gemini JSON parse error:",
@@ -366,14 +527,12 @@ Do not include code fences.
       });
     }
 
-    /*
-     * Validate Gemini response.
-     */
     if (
       !Array.isArray(
         parsed.followUpQuestions
       ) ||
-      parsed.followUpQuestions.length === 0
+      parsed.followUpQuestions
+        .length === 0
     ) {
       return res.status(200).json({
         chiefComplaint,
@@ -388,9 +547,6 @@ Do not include code fences.
     const question =
       parsed.followUpQuestions[0];
 
-    /*
-     * Safety validation for question type.
-     */
     const allowedTypes = [
       "text",
       "yesno",
@@ -405,12 +561,13 @@ Do not include code fences.
       question.type = "text";
     }
 
-    /*
-     * Make sure choice questions actually have options.
-     */
-    if (question.type === "choice") {
+    if (
+      question.type === "choice"
+    ) {
       if (
-        !Array.isArray(question.options) ||
+        !Array.isArray(
+          question.options
+        ) ||
         question.options.length < 2
       ) {
         question.type = "text";
@@ -420,13 +577,11 @@ Do not include code fences.
       question.options = [];
     }
 
-    /*
-     * Prevent duplicate keys if Gemini accidentally
-     * creates one that already exists.
-     */
     if (
       !question.key ||
-      answeredKeys.has(question.key)
+      answeredKeys.has(
+        question.key
+      )
     ) {
       return res.status(200).json({
         chiefComplaint,
@@ -438,22 +593,82 @@ Do not include code fences.
       });
     }
 
+    /*
+     * Extra language protection.
+     *
+     * If Hindi was selected but Gemini somehow
+     * returns an obviously English question,
+     * fallback to Hindi.
+     *
+     * Same for English.
+     */
+
+    const questionText =
+      String(
+        question.question || ""
+      );
+
+    if (
+      selectedLanguage === "hindi"
+    ) {
+      const hasHindi =
+        /[\u0900-\u097F]/.test(
+          questionText
+        );
+
+      if (!hasHindi) {
+        return res.status(200).json({
+          chiefComplaint,
+          source: "fallback",
+          followUpQuestions:
+            fallbackQuestion
+              ? [fallbackQuestion]
+              : [],
+        });
+      }
+    }
+
+    if (
+      selectedLanguage === "english"
+    ) {
+      const hasHindi =
+        /[\u0900-\u097F]/.test(
+          questionText
+        );
+
+      if (hasHindi) {
+        return res.status(200).json({
+          chiefComplaint,
+          source: "fallback",
+          followUpQuestions:
+            fallbackQuestion
+              ? [fallbackQuestion]
+              : [],
+        });
+      }
+    }
+
     return res.status(200).json({
       chiefComplaint:
         parsed.chiefComplaint ||
         chiefComplaint,
+
       source: "gemini",
+
       followUpQuestions: [
         {
           question:
             question.question ||
             fallbackQuestion?.question ||
             "Please describe your symptoms.",
+
           type: question.type,
+
           key:
             question.key ||
             fallbackQuestion?.key ||
             `question_${Date.now()}`,
+
           options:
             question.options || [],
         },
@@ -465,9 +680,6 @@ Do not include code fences.
       error
     );
 
-    /*
-     * Never break the interview because Gemini is down.
-     */
     return res.status(200).json({
       chiefComplaint,
       source: "fallback",

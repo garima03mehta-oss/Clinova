@@ -9,6 +9,8 @@ export default function CareSystemSelection() {
   const [previousSelection, setPreviousSelection] =
     useState(null);
 
+  const [language, setLanguage] = useState("english");
+
   useEffect(() => {
     const saved =
       localStorage.getItem("clinovaCareSystem");
@@ -16,7 +18,18 @@ export default function CareSystemSelection() {
     if (saved) {
       setPreviousSelection(saved);
     }
+
+    const savedLanguage =
+      localStorage.getItem("clinovaLanguage");
+
+    if (savedLanguage) {
+      setLanguage(savedLanguage.toLowerCase());
+    }
   }, []);
+
+  const isHindi =
+    language === "hindi" ||
+    language === "hi";
 
   const selectCareSystem = async (system) => {
     try {
@@ -46,6 +59,24 @@ export default function CareSystemSelection() {
     }
   };
 
+  const getSystemName = (system) => {
+    if (system === "allopathy") {
+      return isHindi ? "एलोपैथी" : "Allopathy";
+    }
+
+    if (system === "ayush") {
+      return isHindi ? "आयुष" : "AYUSH";
+    }
+
+    if (system === "both") {
+      return isHindi
+        ? "दोनों"
+        : "Both";
+    }
+
+    return system;
+  };
+
   return (
     <div
       style={{
@@ -56,6 +87,7 @@ export default function CareSystemSelection() {
         justifyContent: "center",
         padding: "24px",
         background: "#F6F8F7",
+        boxSizing: "border-box",
       }}
     >
       <div
@@ -70,16 +102,27 @@ export default function CareSystemSelection() {
             "0 4px 20px rgba(0,0,0,0.06)",
         }}
       >
-        <h1>Care System for This Consultation</h1>
+        <h1
+          style={{
+            color: "#1F2937",
+            marginBottom: "10px",
+          }}
+        >
+          {isHindi
+            ? "इस परामर्श के लिए चिकित्सा पद्धति चुनें"
+            : "Care System for This Consultation"}
+        </h1>
 
         <p
           style={{
             color: "#6B7280",
             marginBottom: "24px",
+            lineHeight: 1.6,
           }}
         >
-          Choose how you would like Clinova to
-          conduct your clinical intake.
+          {isHindi
+            ? "चुनें कि आप Clinova से अपना क्लिनिकल इंटरव्यू किस चिकित्सा पद्धति के अनुसार करवाना चाहते हैं।"
+            : "Choose how you would like Clinova to conduct your clinical intake."}
         </p>
 
         {previousSelection && (
@@ -90,9 +133,15 @@ export default function CareSystemSelection() {
               marginBottom: "20px",
             }}
           >
-            Last time you chose:{" "}
-            <strong>{previousSelection}</strong>.
-            You can change this for today.
+            {isHindi
+              ? "पिछली बार आपने चुना था:"
+              : "Last time you chose:"}{" "}
+            <strong>
+              {getSystemName(previousSelection)}
+            </strong>
+            {isHindi
+              ? "। आप इसे आज बदल सकते हैं।"
+              : ". You can change this for today."}
           </p>
         )}
 
@@ -118,7 +167,7 @@ export default function CareSystemSelection() {
               cursor: "pointer",
             }}
           >
-            🩺 Allopathy
+            🩺 {isHindi ? "एलोपैथी" : "Allopathy"}
           </button>
 
           <button
@@ -136,7 +185,7 @@ export default function CareSystemSelection() {
               cursor: "pointer",
             }}
           >
-            🌿 AYUSH
+            🌿 {isHindi ? "आयुष" : "AYUSH"}
           </button>
 
           <button
@@ -154,7 +203,7 @@ export default function CareSystemSelection() {
               cursor: "pointer",
             }}
           >
-            🔄 Both
+            🔄 {isHindi ? "दोनों" : "Both"}
           </button>
         </div>
       </div>
