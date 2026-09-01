@@ -18,10 +18,10 @@ import Consent from "./pages/patient/Consent";
 import Identification from "./pages/patient/Identification";
 import CareSystemSelection from "./pages/patient/CareSystemSelection";
 
-import Interview from "./pages/patient/interview/Interview";
+import Interview from "./pages/patient/Interview/Interview";
 
-import DocumentUpload from "./pages/patient/documents/DocumentUpload";
-import Timeline from "./pages/patient/documents/Timeline";
+import DocumentUpload from "./pages/patient/Documents/DocumentUpload";
+import Timeline from "./pages/patient/Documents/Timeline";
 
 import HealthRecord from "./pages/patient/HealthRecord";
 import RecordSearch from "./pages/patient/RecordSearch";
@@ -37,8 +37,8 @@ import PreReport from "./pages/patient/PreReport";
 import DoctorLogin from "./pages/doctor/DoctorLogin";
 import DoctorRegister from "./pages/doctor/DoctorRegister";
 
-import EnterAccessCode from "./pages/doctor/EnterAccessCode";
-import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import EnterAccessCode from "./pages/Doctor/EnterAccessCode";
+import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
 
 import PatientQueue from "./pages/doctor/PatientQueue";
 import AttentionLayer from "./pages/doctor/AttentionLayer";
