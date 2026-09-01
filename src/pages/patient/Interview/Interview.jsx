@@ -33,7 +33,7 @@ export default function Interview() {
 
     intro: isHindi
       ? "Clinova आपके लक्षणों के आधार पर कुछ महत्वपूर्ण प्रश्न पूछेगा ताकि आपके डॉक्टर के लिए जानकारी व्यवस्थित की जा सके।"
-      : "Clinova will ask a few relevant questions to organize information for your doctor.",
+      : "Clinova will ask a few relevant questions based on your symptoms to organize useful information for your doctor.",
 
     placeholder: isHindi
       ? "उदाहरण: मुझे कल से सिरदर्द हो रहा है..."
@@ -45,7 +45,7 @@ export default function Interview() {
 
     preparing: isHindi
       ? "🤖 प्रश्न तैयार किए जा रहे हैं..."
-      : "🤖 Preparing questions...",
+      : "🤖 Preparing question...",
 
     smartInterview: isHindi
       ? "CLINOVA • स्मार्ट क्लिनिकल इंटरव्यू"
@@ -67,7 +67,7 @@ export default function Interview() {
 
     thinking: isHindi
       ? "🤖 अगला प्रश्न तैयार हो रहा है..."
-      : "🤖 Thinking...",
+      : "🤖 Preparing next question...",
 
     continue: isHindi
       ? "आगे बढ़ें →"
@@ -86,45 +86,51 @@ export default function Interview() {
       : "Unable to start the interview. Please try again.",
 
     fallbackError: isHindi
-      ? "AI प्रश्न अभी उपलब्ध नहीं हैं। सामान्य क्लिनिकल प्रश्नों के साथ इंटरव्यू जारी रहेगा।"
-      : "AI questions are temporarily unavailable. Using standard clinical questions.",
-
-    answerFallback: isHindi
-      ? "AI अभी उपलब्ध नहीं है। सामान्य प्रश्नों के साथ इंटरव्यू जारी रहेगा।"
-      : "AI is temporarily unavailable. Continuing with standard questions.",
+      ? "AI प्रश्न उपलब्ध नहीं है। सामान्य क्लिनिकल प्रश्न के साथ इंटरव्यू जारी रहेगा।"
+      : "AI question is temporarily unavailable. A standard clinical question will be used.",
 
     documentQuestion: isHindi
       ? "क्या आपके पास कोई मेडिकल दस्तावेज़ है?"
       : "Do you have a medical document?",
 
     documentDescription: isHindi
-      ? "आप अपनी पुरानी मेडिकल रिपोर्ट, प्रिस्क्रिप्शन, लैब रिपोर्ट या स्कैन जोड़ सकते हैं। Clinova आपके दस्तावेज़ का AI की सहायता से विश्लेषण कर सकता है और प्री-कंसल्टेशन रिपोर्ट तैयार करने में मदद कर सकता है।"
-      : "You can add a previous medical report, prescription, lab report or scan. Clinova can analyze the document with AI before preparing your pre-consultation report.",
+      ? "आप अपनी पुरानी मेडिकल रिपोर्ट, प्रिस्क्रिप्शन, लैब रिपोर्ट या स्कैन जोड़ सकते हैं।"
+      : "You can add a previous medical report, prescription, lab report or scan.",
 
     yesDocument: isHindi
       ? "📄 हाँ, मेरे पास दस्तावेज़ है"
       : "📄 Yes, I have a document",
 
     uploadDescription: isHindi
-      ? "दस्तावेज़ अपलोड करें और चाहें तो Clinova AI से उसका विश्लेषण करवाएं।"
-      : "Upload it and optionally analyze it with Clinova AI.",
+      ? "दस्तावेज़ अपलोड करें और फिर अपनी प्री-कंसल्टेशन रिपोर्ट तैयार करें।"
+      : "Upload your document and then generate your pre-consultation report.",
 
     noDocument: isHindi
       ? "⏭️ मेरे पास कोई दस्तावेज़ नहीं है"
       : "⏭️ I don't have a document",
 
     continueDescription: isHindi
-      ? "सीधे आगे बढ़ें और अपनी प्री-कंसल्टेशन रिपोर्ट तैयार करें।"
+      ? "बिना दस्तावेज़ के सीधे प्री-कंसल्टेशन रिपोर्ट तैयार करें।"
       : "Continue directly and generate your pre-consultation report.",
 
     optional: isHindi
-      ? "दस्तावेज़ अपलोड करना वैकल्पिक है। आप बिना दस्तावेज़ के भी रिपोर्ट तैयार कर सकते हैं।"
-      : "Documents are optional. You can generate your report without uploading anything.",
+      ? "दस्तावेज़ वैकल्पिक हैं। आप बिना दस्तावेज़ के भी रिपोर्ट तैयार कर सकते हैं।"
+      : "Documents are optional. You can generate the report without documents.",
 
     disclaimer: isHindi
-      ? "Clinova द्वारा तैयार की गई जानकारी केवल प्री-कंसल्टेशन ड्राफ्ट है। यह किसी बीमारी का निदान नहीं करती और योग्य स्वास्थ्य विशेषज्ञ की सलाह का विकल्प नहीं है।"
-      : "Clinova provides an AI-generated pre-consultation draft. It does not provide a diagnosis or replace a qualified healthcare professional.",
+      ? "Clinova द्वारा तैयार की गई जानकारी केवल प्री-कंसल्टेशन ड्राफ्ट है। यह निदान या उपचार की सलाह नहीं है।"
+      : "Clinova provides an AI-assisted pre-consultation draft. It is not a diagnosis or treatment recommendation.",
   };
+
+  /*
+   * ---------------------------------------------------------
+   * FALLBACK QUESTIONS
+   * ---------------------------------------------------------
+   *
+   * IMPORTANT:
+   * These questions are used ONLY when Gemini fails,
+   * returns invalid data, or returns no usable question.
+   */
 
   const fallbackQuestions = isHindi
     ? [
@@ -152,7 +158,7 @@ export default function Interview() {
         },
         {
           question:
-            "क्या कोई अन्य लक्षण या महत्वपूर्ण जानकारी है जो आप चाहते हैं कि डॉक्टर को पता हो?",
+            "क्या आपके मुख्य लक्षण के साथ कोई अन्य लक्षण भी हो रहे हैं?",
           type: "text",
           key: "associated_symptoms",
           options: [],
@@ -190,6 +196,12 @@ export default function Interview() {
         },
       ];
 
+  /*
+   * ---------------------------------------------------------
+   * LOAD SAVED DATA
+   * ---------------------------------------------------------
+   */
+
   useEffect(() => {
     try {
       const savedLanguage =
@@ -219,17 +231,38 @@ export default function Interview() {
     }
   }, []);
 
+  /*
+   * ---------------------------------------------------------
+   * NORMALIZE GEMINI QUESTION
+   * ---------------------------------------------------------
+   */
+
   const normalizeQuestion = (question) => {
     if (!question) return null;
-
-    let type = question.type || "text";
 
     const questionText = String(
       question.question || ""
     ).trim();
 
-    const lowerQuestion =
-      questionText.toLowerCase();
+    if (!questionText) return null;
+
+    let type = question.type || "text";
+
+    if (!["text", "yesno", "choice"].includes(type)) {
+      type = "text";
+    }
+
+    let options = Array.isArray(question.options)
+      ? question.options
+          .map((option) => String(option).trim())
+          .filter(Boolean)
+      : [];
+
+    const lowerQuestion = questionText.toLowerCase();
+
+    /*
+     * Duration questions should be text.
+     */
 
     if (
       lowerQuestion.includes("how long") ||
@@ -241,36 +274,12 @@ export default function Interview() {
       lowerQuestion.includes("कब से")
     ) {
       type = "text";
+      options = [];
     }
 
-    if (
-      lowerQuestion.includes("severity") ||
-      lowerQuestion.includes("how severe") ||
-      lowerQuestion.includes("how bad") ||
-      lowerQuestion.includes("गंभीरता")
-    ) {
-      type = "choice";
-    }
-
-    if (
-      lowerQuestion.includes("getting better") ||
-      lowerQuestion.includes("getting worse") ||
-      lowerQuestion.includes("changed over time") ||
-      lowerQuestion.includes("changing over time") ||
-      lowerQuestion.includes("बेहतर") ||
-      lowerQuestion.includes("बदतर") ||
-      lowerQuestion.includes("समय के साथ")
-    ) {
-      type = "choice";
-    }
-
-    if (!["text", "yesno", "choice"].includes(type)) {
-      type = "text";
-    }
-
-    let options = Array.isArray(question.options)
-      ? question.options
-      : [];
+    /*
+     * Severity questions should be choice.
+     */
 
     if (
       lowerQuestion.includes("severity") ||
@@ -285,11 +294,15 @@ export default function Interview() {
         : ["Mild", "Moderate", "Severe"];
     }
 
+    /*
+     * Progression questions should be choice.
+     */
+
     if (
       lowerQuestion.includes("getting better") ||
       lowerQuestion.includes("getting worse") ||
-      lowerQuestion.includes("changed over time") ||
       lowerQuestion.includes("changing over time") ||
+      lowerQuestion.includes("changed over time") ||
       lowerQuestion.includes("बेहतर") ||
       lowerQuestion.includes("बदतर") ||
       lowerQuestion.includes("समय के साथ")
@@ -309,28 +322,56 @@ export default function Interview() {
           ];
     }
 
+    /*
+     * Yes / No.
+     */
+
     if (type === "yesno") {
-      options = isHindi ? ["हाँ", "नहीं"] : ["Yes", "No"];
+      options = isHindi
+        ? ["हाँ", "नहीं"]
+        : ["Yes", "No"];
     }
+
+    /*
+     * Choice must have at least 2 options.
+     */
 
     if (type === "choice" && options.length < 2) {
       type = "text";
       options = [];
     }
 
+    /*
+     * Language safety check.
+     */
+
+    const hasHindi = /[\u0900-\u097F]/.test(
+      questionText
+    );
+
+    if (isHindi && !hasHindi) {
+      return null;
+    }
+
+    if (!isHindi && hasHindi) {
+      return null;
+    }
+
     return {
-      question:
-        questionText ||
-        (isHindi
-          ? "कृपया अपने लक्षणों के बारे में बताएं।"
-          : "Please describe your symptoms."),
+      question: questionText,
       type,
       key:
         question.key ||
-        `question_${Date.now()}`,
+        `gemini_question_${Date.now()}`,
       options,
     };
   };
+
+  /*
+   * ---------------------------------------------------------
+   * GET NEXT FALLBACK QUESTION
+   * ---------------------------------------------------------
+   */
 
   const getNextFallbackQuestion = (currentHistory) => {
     return fallbackQuestions.find(
@@ -338,6 +379,12 @@ export default function Interview() {
         currentHistory[question.key] === undefined
     );
   };
+
+  /*
+   * ---------------------------------------------------------
+   * FINISH INTERVIEW
+   * ---------------------------------------------------------
+   */
 
   const finishInterview = (finalHistory) => {
     localStorage.setItem(
@@ -350,26 +397,27 @@ export default function Interview() {
     setShowDocumentChoice(true);
   };
 
+  /*
+   * ---------------------------------------------------------
+   * DOCUMENT CHOICE
+   * ---------------------------------------------------------
+   */
+
   const handleDocumentChoice = (choice) => {
+    localStorage.setItem(
+      "clinovaFreeReportMode",
+      "true"
+    );
+
     if (choice === "none") {
       localStorage.setItem(
         "clinovaDocuments",
         JSON.stringify([])
       );
 
-      localStorage.setItem(
-        "clinovaFreeReportMode",
-        "true"
-      );
-
       navigate("/pre-report");
       return;
     }
-
-    localStorage.setItem(
-      "clinovaFreeReportMode",
-      "true"
-    );
 
     localStorage.setItem(
       "clinovaDocumentFlow",
@@ -378,6 +426,12 @@ export default function Interview() {
 
     navigate("/documents");
   };
+
+  /*
+   * ---------------------------------------------------------
+   * START INTERVIEW
+   * ---------------------------------------------------------
+   */
 
   const startInterview = async () => {
     if (!symptomText.trim()) {
@@ -406,6 +460,13 @@ export default function Interview() {
         symptomText.trim()
       );
 
+      /*
+       * FIRST TRY GEMINI.
+       *
+       * Fallback is NOT selected here unless Gemini
+       * actually fails or gives invalid response.
+       */
+
       let result = null;
 
       try {
@@ -415,35 +476,64 @@ export default function Interview() {
           language
         );
 
-        console.log("Gemini first response:", result);
+        console.log(
+          "Gemini first response:",
+          result
+        );
       } catch (geminiError) {
         console.warn(
-          "Gemini unavailable. Using fallback questions.",
+          "Gemini failed. Using fallback question.",
           geminiError
         );
       }
 
       let nextQuestion = null;
 
+      /*
+       * USE GEMINI QUESTION ONLY IF VALID.
+       */
+
       if (
         result &&
         Array.isArray(result.followUpQuestions) &&
         result.followUpQuestions.length > 0
       ) {
-        nextQuestion = normalizeQuestion(
-          result.followUpQuestions[0]
-        );
+        const geminiQuestion =
+          normalizeQuestion(
+            result.followUpQuestions[0]
+          );
+
+        if (
+          geminiQuestion &&
+          initialHistory[
+            geminiQuestion.key
+          ] === undefined
+        ) {
+          nextQuestion = geminiQuestion;
+        }
       }
+
+      /*
+       * ONLY NOW USE FALLBACK.
+       */
 
       if (!nextQuestion) {
         const fallback =
-          getNextFallbackQuestion(initialHistory);
+          getNextFallbackQuestion(
+            initialHistory
+          );
 
         if (fallback) {
           nextQuestion =
             normalizeQuestion(fallback);
+
+          setError(t.fallbackError);
         }
       }
+
+      /*
+       * No question means interview complete.
+       */
 
       if (!nextQuestion) {
         finishInterview(initialHistory);
@@ -455,16 +545,25 @@ export default function Interview() {
       setStarted(true);
       setAnswer("");
     } catch (err) {
-      console.error("AI Interview Error:", err);
+      console.error(
+        "AI Interview Error:",
+        err
+      );
 
       const fallback =
-        getNextFallbackQuestion(history);
+        getNextFallbackQuestion(
+          {
+            ...history,
+            chiefComplaint:
+              symptomText.trim(),
+          }
+        );
 
       if (fallback) {
-        const normalized =
-          normalizeQuestion(fallback);
+        setCurrentQuestion(
+          normalizeQuestion(fallback)
+        );
 
-        setCurrentQuestion(normalized);
         setQuestionNumber(1);
         setStarted(true);
         setAnswer("");
@@ -477,10 +576,17 @@ export default function Interview() {
     }
   };
 
+  /*
+   * ---------------------------------------------------------
+   * SUBMIT ANSWER
+   * ---------------------------------------------------------
+   */
+
   const submitAnswer = async () => {
     if (!currentQuestion) return;
 
-    const trimmedAnswer = answer.trim();
+    const trimmedAnswer =
+      answer.trim();
 
     if (!trimmedAnswer) {
       setError(t.noAnswer);
@@ -492,7 +598,8 @@ export default function Interview() {
 
     const updatedHistory = {
       ...history,
-      [currentQuestion.key]: trimmedAnswer,
+      [currentQuestion.key]:
+        trimmedAnswer,
     };
 
     setHistory(updatedHistory);
@@ -503,6 +610,10 @@ export default function Interview() {
     );
 
     try {
+      /*
+       * Ask Gemini for the NEXT question.
+       */
+
       let result = null;
 
       try {
@@ -512,60 +623,99 @@ export default function Interview() {
           language
         );
 
-        console.log("Gemini next response:", result);
+        console.log(
+          "Gemini next response:",
+          result
+        );
       } catch (geminiError) {
         console.warn(
-          "Gemini unavailable for next question. Using fallback.",
+          "Gemini failed for next question. Using fallback.",
           geminiError
         );
       }
 
       let nextQuestion = null;
 
+      /*
+       * Gemini question first.
+       */
+
       if (
         result &&
-        Array.isArray(result.followUpQuestions) &&
+        Array.isArray(
+          result.followUpQuestions
+        ) &&
         result.followUpQuestions.length > 0
       ) {
-        nextQuestion = normalizeQuestion(
-          result.followUpQuestions[0]
-        );
-      }
+        const geminiQuestion =
+          normalizeQuestion(
+            result.followUpQuestions[0]
+          );
 
-      if (
-        nextQuestion &&
-        updatedHistory[nextQuestion.key] !== undefined
-      ) {
-        nextQuestion = null;
-      }
-
-      if (!nextQuestion) {
-        const fallback =
-          getNextFallbackQuestion(updatedHistory);
-
-        if (fallback) {
+        if (
+          geminiQuestion &&
+          updatedHistory[
+            geminiQuestion.key
+          ] === undefined
+        ) {
           nextQuestion =
-            normalizeQuestion(fallback);
+            geminiQuestion;
         }
       }
 
+      /*
+       * FALLBACK ONLY IF GEMINI DID NOT
+       * PROVIDE A VALID QUESTION.
+       */
+
+      if (!nextQuestion) {
+        const fallback =
+          getNextFallbackQuestion(
+            updatedHistory
+          );
+
+        if (fallback) {
+          nextQuestion =
+            normalizeQuestion(
+              fallback
+            );
+
+          setError(t.fallbackError);
+        }
+      }
+
+      /*
+       * Maximum 4 follow-up questions.
+       */
+
       const answeredFollowUps =
-        Object.keys(updatedHistory).filter(
-          (key) => key !== "chiefComplaint"
+        Object.keys(
+          updatedHistory
+        ).filter(
+          (key) =>
+            key !== "chiefComplaint" &&
+            key !== "symptomText" &&
+            key !== "symptoms"
         ).length;
 
       if (
         answeredFollowUps >= 4 ||
         !nextQuestion
       ) {
-        finishInterview(updatedHistory);
+        finishInterview(
+          updatedHistory
+        );
         return;
       }
 
-      setCurrentQuestion(nextQuestion);
+      setCurrentQuestion(
+        nextQuestion
+      );
+
       setQuestionNumber(
         (prev) => prev + 1
       );
+
       setAnswer("");
     } catch (err) {
       console.error(
@@ -579,33 +729,53 @@ export default function Interview() {
         );
 
       if (fallback) {
-        const normalized =
-          normalizeQuestion(fallback);
+        setCurrentQuestion(
+          normalizeQuestion(
+            fallback
+          )
+        );
 
-        setCurrentQuestion(normalized);
         setQuestionNumber(
           (prev) => prev + 1
         );
+
         setAnswer("");
-        setError(t.answerFallback);
+        setError(
+          t.fallbackError
+        );
       } else {
-        finishInterview(updatedHistory);
+        finishInterview(
+          updatedHistory
+        );
       }
     } finally {
       setLoading(false);
     }
   };
 
+  /*
+   * ---------------------------------------------------------
+   * ENTER KEY
+   * ---------------------------------------------------------
+   */
+
   const handleKeyDown = (event) => {
     if (
       event.key === "Enter" &&
       !event.shiftKey &&
-      currentQuestion?.type === "text"
+      currentQuestion?.type ===
+        "text"
     ) {
       event.preventDefault();
       submitAnswer();
     }
   };
+
+  /*
+   * ---------------------------------------------------------
+   * DOCUMENT SCREEN
+   * ---------------------------------------------------------
+   */
 
   if (showDocumentChoice) {
     return (
@@ -665,12 +835,15 @@ export default function Interview() {
           >
             <button
               onClick={() =>
-                handleDocumentChoice("upload")
+                handleDocumentChoice(
+                  "upload"
+                )
               }
               style={{
                 padding: "20px",
                 borderRadius: "14px",
-                border: "2px solid #0E6E64",
+                border:
+                  "2px solid #0E6E64",
                 background: "#EAF5F3",
                 textAlign: "left",
                 cursor: "pointer",
@@ -700,12 +873,15 @@ export default function Interview() {
 
             <button
               onClick={() =>
-                handleDocumentChoice("none")
+                handleDocumentChoice(
+                  "none"
+                )
               }
               style={{
                 padding: "20px",
                 borderRadius: "14px",
-                border: "1px solid #D1D5DB",
+                border:
+                  "1px solid #D1D5DB",
                 background: "#FFFFFF",
                 textAlign: "left",
                 cursor: "pointer",
@@ -726,6 +902,7 @@ export default function Interview() {
                   display: "block",
                   marginTop: "7px",
                   color: "#6B7280",
+                  lineHeight: 1.5,
                 }}
               >
                 {t.continueDescription}
@@ -747,6 +924,12 @@ export default function Interview() {
       </div>
     );
   }
+
+  /*
+   * ---------------------------------------------------------
+   * START SCREEN
+   * ---------------------------------------------------------
+   */
 
   if (!started) {
     return (
@@ -800,7 +983,9 @@ export default function Interview() {
           <textarea
             value={symptomText}
             onChange={(e) =>
-              setSymptomText(e.target.value)
+              setSymptomText(
+                e.target.value
+              )
             }
             placeholder={t.placeholder}
             rows={5}
@@ -809,7 +994,8 @@ export default function Interview() {
               marginTop: "20px",
               padding: "14px",
               borderRadius: "12px",
-              border: "1px solid #D1D5DB",
+              border:
+                "1px solid #D1D5DB",
               fontSize: "15px",
               boxSizing: "border-box",
               resize: "vertical",
@@ -840,13 +1026,15 @@ export default function Interview() {
               padding: "15px",
               border: "none",
               borderRadius: "12px",
-              background:
-                loading ? "#9CA3AF" : "#0E6E64",
+              background: loading
+                ? "#9CA3AF"
+                : "#0E6E64",
               color: "#FFFFFF",
               fontSize: "16px",
               fontWeight: "700",
-              cursor:
-                loading ? "not-allowed" : "pointer",
+              cursor: loading
+                ? "not-allowed"
+                : "pointer",
             }}
           >
             {loading
@@ -857,6 +1045,12 @@ export default function Interview() {
       </div>
     );
   }
+
+  /*
+   * ---------------------------------------------------------
+   * QUESTION SCREEN
+   * ---------------------------------------------------------
+   */
 
   return (
     <div
@@ -891,7 +1085,8 @@ export default function Interview() {
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent:
+              "space-between",
             alignItems: "center",
             gap: "12px",
             marginTop: "10px",
@@ -913,7 +1108,8 @@ export default function Interview() {
               whiteSpace: "nowrap",
             }}
           >
-            {t.question} {questionNumber}
+            {t.question}{" "}
+            {questionNumber}
           </span>
         </div>
 
@@ -926,7 +1122,9 @@ export default function Interview() {
             color: "#084C44",
           }}
         >
-          <strong>{t.mainComplaint}</strong>{" "}
+          <strong>
+            {t.mainComplaint}
+          </strong>{" "}
           {symptomText}
         </div>
 
@@ -945,14 +1143,21 @@ export default function Interview() {
               {currentQuestion.question}
             </h2>
 
-            {currentQuestion.type === "text" && (
+            {currentQuestion.type ===
+              "text" && (
               <textarea
                 value={answer}
                 onChange={(e) =>
-                  setAnswer(e.target.value)
+                  setAnswer(
+                    e.target.value
+                  )
                 }
-                onKeyDown={handleKeyDown}
-                placeholder={t.answerPlaceholder}
+                onKeyDown={
+                  handleKeyDown
+                }
+                placeholder={
+                  t.answerPlaceholder
+                }
                 rows={4}
                 autoFocus
                 style={{
@@ -960,16 +1165,19 @@ export default function Interview() {
                   marginTop: "18px",
                   padding: "14px",
                   borderRadius: "12px",
-                  border: "1px solid #D1D5DB",
+                  border:
+                    "1px solid #D1D5DB",
                   fontSize: "15px",
-                  boxSizing: "border-box",
+                  boxSizing:
+                    "border-box",
                   resize: "vertical",
                   outline: "none",
                 }}
               />
             )}
 
-            {currentQuestion.type === "yesno" && (
+            {currentQuestion.type ===
+              "yesno" && (
               <div
                 style={{
                   display: "grid",
@@ -984,23 +1192,32 @@ export default function Interview() {
                     <button
                       key={option}
                       onClick={() =>
-                        setAnswer(option)
+                        setAnswer(
+                          option
+                        )
                       }
                       style={{
                         padding: "15px",
-                        borderRadius: "12px",
+                        borderRadius:
+                          "12px",
                         border:
-                          answer === option
+                          answer ===
+                          option
                             ? "2px solid #0E6E64"
                             : "1px solid #D1D5DB",
                         background:
-                          answer === option
+                          answer ===
+                          option
                             ? "#EAF5F3"
                             : "#FFFFFF",
-                        color: "#1F2937",
-                        fontWeight: "700",
-                        fontSize: "15px",
-                        cursor: "pointer",
+                        color:
+                          "#1F2937",
+                        fontWeight:
+                          "700",
+                        fontSize:
+                          "15px",
+                        cursor:
+                          "pointer",
                       }}
                     >
                       {option}
@@ -1010,11 +1227,13 @@ export default function Interview() {
               </div>
             )}
 
-            {currentQuestion.type === "choice" && (
+            {currentQuestion.type ===
+              "choice" && (
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "column",
+                  flexDirection:
+                    "column",
                   gap: "10px",
                   marginTop: "20px",
                 }}
@@ -1024,24 +1243,34 @@ export default function Interview() {
                     <button
                       key={option}
                       onClick={() =>
-                        setAnswer(option)
+                        setAnswer(
+                          option
+                        )
                       }
                       style={{
                         padding: "15px",
-                        borderRadius: "12px",
+                        borderRadius:
+                          "12px",
                         border:
-                          answer === option
+                          answer ===
+                          option
                             ? "2px solid #0E6E64"
                             : "1px solid #D1D5DB",
                         background:
-                          answer === option
+                          answer ===
+                          option
                             ? "#EAF5F3"
                             : "#FFFFFF",
-                        color: "#1F2937",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        cursor: "pointer",
-                        textAlign: "left",
+                        color:
+                          "#1F2937",
+                        fontWeight:
+                          "600",
+                        fontSize:
+                          "15px",
+                        cursor:
+                          "pointer",
+                        textAlign:
+                          "left",
                       }}
                     >
                       {option}
@@ -1056,8 +1285,10 @@ export default function Interview() {
                 style={{
                   marginTop: "16px",
                   padding: "12px",
-                  borderRadius: "10px",
-                  background: "#FEF2F2",
+                  borderRadius:
+                    "10px",
+                  background:
+                    "#FEF2F2",
                   color: "#B91C1C",
                   lineHeight: 1.5,
                 }}
@@ -1067,25 +1298,31 @@ export default function Interview() {
             )}
 
             <button
-              onClick={submitAnswer}
+              onClick={
+                submitAnswer
+              }
               disabled={
-                !answer.trim() || loading
+                !answer.trim() ||
+                loading
               }
               style={{
                 width: "100%",
                 marginTop: "22px",
                 padding: "15px",
                 border: "none",
-                borderRadius: "12px",
+                borderRadius:
+                  "12px",
                 background:
-                  !answer.trim() || loading
+                  !answer.trim() ||
+                  loading
                     ? "#9CA3AF"
                     : "#0E6E64",
                 color: "#FFFFFF",
                 fontSize: "16px",
                 fontWeight: "700",
                 cursor:
-                  !answer.trim() || loading
+                  !answer.trim() ||
+                  loading
                     ? "not-allowed"
                     : "pointer",
               }}

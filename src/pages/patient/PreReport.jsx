@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 /*
- * =========================================================
- * INDEXED DB
- * =========================================================
- */
+=========================================================
+INDEXED DB
+=========================================================
+*/
 
 const DB_NAME = "ClinovaDocumentsDB";
 const DB_VERSION = 1;
@@ -25,13 +25,8 @@ const openDocumentsDB = () => {
       }
     };
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-
-    request.onerror = () => {
-      reject(request.error);
-    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 };
 
@@ -45,7 +40,6 @@ const getDocumentsFromDB = async () => {
     );
 
     const store = transaction.objectStore(STORE_NAME);
-
     const request = store.getAll();
 
     request.onsuccess = () => {
@@ -61,222 +55,426 @@ const getDocumentsFromDB = async () => {
 };
 
 /*
- * =========================================================
- * LANGUAGE HELPER
- * =========================================================
- */
+=========================================================
+LANGUAGE
+=========================================================
+*/
 
 const getLanguage = () => {
   const language =
-    localStorage.getItem("clinovaLanguage") || "en";
+    localStorage.getItem("clinovaLanguage") || "english";
 
-  const normalized = language
-    .toString()
-    .toLowerCase()
-    .trim();
-
-  return ["hi", "hindi", "हिंदी"].includes(normalized)
+  return ["hi", "hindi", "हिंदी"].includes(
+    language.toLowerCase()
+  )
     ? "hi"
     : "en";
 };
 
 /*
- * =========================================================
- * COMPONENT
- * =========================================================
- */
+=========================================================
+BACKUP QUESTIONS
+=========================================================
+*/
+
+const getBackupQuestions = (symptoms) => {
+  const text = symptoms.toLowerCase();
+
+  let category = "general";
+
+  if (
+    text.includes("chest") ||
+    text.includes("heart") ||
+    text.includes("छाती") ||
+    text.includes("सीने")
+  ) {
+    category = "chest";
+  } else if (
+    text.includes("headache") ||
+    text.includes("head pain") ||
+    text.includes("सिर दर्द")
+  ) {
+    category = "headache";
+  } else if (
+    text.includes("fever") ||
+    text.includes("temperature") ||
+    text.includes("बुखार")
+  ) {
+    category = "fever";
+  } else if (
+    text.includes("cough") ||
+    text.includes("cold") ||
+    text.includes("खांसी") ||
+    text.includes("जुकाम")
+  ) {
+    category = "respiratory";
+  } else if (
+    text.includes("stomach") ||
+    text.includes("abdominal") ||
+    text.includes("पेट")
+  ) {
+    category = "stomach";
+  }
+
+  const common = [
+    {
+      id: "duration",
+      question: "When did these symptoms start?",
+      type: "text",
+    },
+    {
+      id: "severity",
+      question:
+        "How would you describe the severity of your symptoms?",
+      type: "text",
+    },
+    {
+      id: "frequency",
+      question:
+        "Are the symptoms constant or do they come and go?",
+      type: "text",
+    },
+    {
+      id: "changes",
+      question:
+        "Have the symptoms become better, worse, or stayed the same?",
+      type: "text",
+    },
+    {
+      id: "medication",
+      question:
+        "Have you taken any medicine for these symptoms?",
+      type: "text",
+    },
+  ];
+
+  const categoryQuestions = {
+    chest: [
+      {
+        id: "chest_location",
+        question:
+          "Where exactly do you feel the chest discomfort?",
+        type: "text",
+      },
+      {
+        id: "breathing",
+        question:
+          "Have you experienced any difficulty breathing?",
+        type: "text",
+      },
+      {
+        id: "activity",
+        question:
+          "Does the discomfort change with physical activity?",
+        type: "text",
+      },
+    ],
+
+    headache: [
+      {
+        id: "head_location",
+        question:
+          "Which part of your head hurts?",
+        type: "text",
+      },
+      {
+        id: "head_pattern",
+        question:
+          "Is the headache continuous or intermittent?",
+        type: "text",
+      },
+      {
+        id: "associated",
+        question:
+          "Have you noticed nausea, vomiting, dizziness, or sensitivity to light?",
+        type: "text",
+      },
+    ],
+
+    fever: [
+      {
+        id: "temperature",
+        question:
+          "Do you know your recent temperature?",
+        type: "text",
+      },
+      {
+        id: "chills",
+        question:
+          "Have you experienced chills or sweating?",
+        type: "text",
+      },
+      {
+        id: "other_symptoms",
+        question:
+          "Do you have cough, sore throat, body ache, or other symptoms?",
+        type: "text",
+      },
+    ],
+
+    respiratory: [
+      {
+        id: "breathing",
+        question:
+          "Have you experienced difficulty breathing?",
+        type: "text",
+      },
+      {
+        id: "phlegm",
+        question:
+          "Is there mucus or phlegm with the cough?",
+        type: "text",
+      },
+      {
+        id: "duration",
+        question:
+          "How long have you had the cough or cold?",
+        type: "text",
+      },
+    ],
+
+    stomach: [
+      {
+        id: "location",
+        question:
+          "Where exactly is the abdominal discomfort?",
+        type: "text",
+      },
+      {
+        id: "food",
+        question:
+          "Does eating or drinking affect the symptoms?",
+        type: "text",
+      },
+      {
+        id: "vomiting",
+        question:
+          "Have you experienced nausea, vomiting, or changes in bowel movements?",
+        type: "text",
+      },
+    ],
+  };
+
+  return [
+    ...(categoryQuestions[category] || []),
+    ...common,
+  ];
+};
+
+/*
+=========================================================
+COMPONENT
+=========================================================
+*/
 
 export default function PreReport() {
   const navigate = useNavigate();
 
-  const [language] = useState(getLanguage);
+  const language = getLanguage();
+  const isHindi = language === "hi";
+
+  const [step, setStep] = useState(1);
+
+  const [symptoms, setSymptoms] = useState("");
+
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
 
   const [documents, setDocuments] = useState([]);
-  const [selectedDocument, setSelectedDocument] =
-    useState(null);
-
-  const [loadingDocuments, setLoadingDocuments] =
-    useState(true);
-
-  const [generating, setGenerating] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] =
+    useState([]);
 
   const [report, setReport] = useState("");
 
-  const [showReport, setShowReport] =
+  const [loadingQuestions, setLoadingQuestions] =
+    useState(false);
+
+  const [generatingReport, setGeneratingReport] =
+    useState(false);
+
+  const [loadingDocuments, setLoadingDocuments] =
     useState(false);
 
   const [error, setError] = useState("");
 
-  const isHindi = language === "hi";
+  /*
+  =========================================================
+  TRANSLATIONS
+  =========================================================
+  */
+
+  const t = isHindi
+    ? {
+        title: "प्री-कंसल्टेशन रिपोर्ट",
+        subtitle:
+          "लक्षण साझा करें और डॉक्टर के लिए प्रारंभिक रिपोर्ट तैयार करें।",
+
+        step1: "लक्षण",
+        step2: "प्रश्न",
+        step3: "दस्तावेज़",
+        step4: "रिपोर्ट",
+
+        symptomsTitle:
+          "आप अभी किन लक्षणों का अनुभव कर रहे हैं?",
+
+        symptomsPlaceholder:
+          "उदाहरण: पिछले 2 दिनों से बुखार और खांसी है...",
+
+        continue: "जारी रखें",
+
+        questionsTitle:
+          "कुछ और जानकारी साझा करें",
+
+        questionsDescription:
+          "आपके लक्षणों के आधार पर कुछ संबंधित प्रश्न तैयार किए गए हैं।",
+
+        answerPlaceholder:
+          "अपना उत्तर लिखें...",
+
+        next: "आगे बढ़ें",
+
+        documentsTitle:
+          "क्या आपके पास कोई मेडिकल दस्तावेज़ है?",
+
+        documentsDescription:
+          "आप मेडिकल रिपोर्ट, प्रिस्क्रिप्शन या अन्य दस्तावेज़ जोड़ सकते हैं। यह वैकल्पिक है।",
+
+        yesDocuments: "हाँ, दस्तावेज़ जोड़ें",
+
+        noDocuments:
+          "मेरे पास कोई दस्तावेज़ नहीं है",
+
+        generate:
+          "प्री-रिपोर्ट तैयार करें",
+
+        generating:
+          "रिपोर्ट तैयार की जा रही है...",
+
+        reportTitle:
+          "प्री-कंसल्टेशन रिपोर्ट",
+
+        aiDraft:
+          "AI DRAFT • डॉक्टर द्वारा सत्यापन आवश्यक",
+
+        share:
+          "🔐 डॉक्टर के साथ साझा करें",
+
+        dashboard:
+          "🏠 डैशबोर्ड",
+
+        back:
+          "← वापस",
+
+        noDocumentsFound:
+          "कोई सेव किया गया दस्तावेज़ नहीं मिला।",
+
+        chooseDocuments:
+          "दस्तावेज़ चुनें",
+
+        selected:
+          "चयनित",
+
+        optional:
+          "वैकल्पिक",
+
+        error:
+          "कुछ समस्या हुई। कृपया दोबारा प्रयास करें।",
+
+        reportWarning:
+          "यह रिपोर्ट केवल प्रारंभिक AI-generated draft है। यह diagnosis या treatment recommendation नहीं है। डॉक्टर द्वारा समीक्षा आवश्यक है।",
+      }
+    : {
+        title: "Pre-Consultation Report",
+        subtitle:
+          "Share your symptoms and prepare a preliminary report for your doctor.",
+
+        step1: "Symptoms",
+        step2: "Questions",
+        step3: "Documents",
+        step4: "Report",
+
+        symptomsTitle:
+          "What symptoms are you experiencing?",
+
+        symptomsPlaceholder:
+          "Example: I have had fever and cough for the last 2 days...",
+
+        continue: "Continue",
+
+        questionsTitle:
+          "Tell us a little more",
+
+        questionsDescription:
+          "We generated a few relevant questions based on your symptoms.",
+
+        answerPlaceholder:
+          "Type your answer...",
+
+        next: "Continue",
+
+        documentsTitle:
+          "Do you have any medical documents?",
+
+        documentsDescription:
+          "You can add medical reports, prescriptions or other documents. This is optional.",
+
+        yesDocuments: "Yes, Add Documents",
+
+        noDocuments:
+          "No, I don't have documents",
+
+        generate:
+          "Generate Pre-Report",
+
+        generating:
+          "Generating Report...",
+
+        reportTitle:
+          "Pre-Consultation Report",
+
+        aiDraft:
+          "AI DRAFT • Doctor Verification Required",
+
+        share:
+          "🔐 Share with Doctor",
+
+        dashboard:
+          "🏠 Dashboard",
+
+        back:
+          "← Back",
+
+        noDocumentsFound:
+          "No saved documents found.",
+
+        chooseDocuments:
+          "Select Documents",
+
+        selected:
+          "Selected",
+
+        optional:
+          "Optional",
+
+        error:
+          "Something went wrong. Please try again.",
+
+        reportWarning:
+          "This is an AI-generated preliminary draft. It is not a diagnosis or treatment recommendation and must be reviewed by a qualified healthcare professional.",
+      };
 
   /*
-   * =========================================================
-   * TRANSLATIONS
-   * =========================================================
-   */
+  =========================================================
+  LOAD DOCUMENTS
+  =========================================================
+  */
 
-  const t = {
-    backToDashboard: isHindi
-      ? "← डैशबोर्ड पर वापस जाएँ"
-      : "← Back to Dashboard",
-
-    reportGeneration: isHindi
-      ? "CLINOVA • रिपोर्ट जनरेशन"
-      : "CLINOVA • REPORT GENERATION",
-
-    generatePreReport: isHindi
-      ? "प्री-कंसल्टेशन रिपोर्ट तैयार करें"
-      : "Generate Pre-Consultation Report",
-
-    reportDescription: isHindi
-      ? "अपने सेव किए गए मेडिकल दस्तावेज़ में से एक दस्तावेज़ चुनें। Clinova आपके चुने गए दस्तावेज़ और क्लिनिकल इंटरव्यू की जानकारी का उपयोग करके रिपोर्ट तैयार करेगा।"
-      : "Select a medical document from your saved documents. Clinova will use the selected document together with your clinical interview to prepare the report.",
-
-    selectDocument: isHindi
-      ? "📄 मेडिकल दस्तावेज़ चुनें"
-      : "📄 Select a Medical Document",
-
-    selectDocumentDescription: isHindi
-      ? "अपने पहले से अपलोड किए गए दस्तावेज़ों में से चुनें।"
-      : "Choose from documents you have already uploaded.",
-
-    document: isHindi
-      ? "दस्तावेज़"
-      : "Document",
-
-    documents: isHindi
-      ? "दस्तावेज़"
-      : "Documents",
-
-    loadingDocuments: isHindi
-      ? "आपके सेव किए गए दस्तावेज़ लोड हो रहे हैं..."
-      : "Loading your saved documents...",
-
-    noDocuments: isHindi
-      ? "कोई सेव किया गया दस्तावेज़ नहीं मिला"
-      : "No saved documents",
-
-    noDocumentsDescription: isHindi
-      ? "कृपया पहले Documents सेक्शन से अपना मेडिकल दस्तावेज़ अपलोड करें।"
-      : "Please upload your medical document from the Documents section first.",
-
-    goToDocuments: isHindi
-      ? "📤 दस्तावेज़ों पर जाएँ"
-      : "📤 Go to Documents",
-
-    file: isHindi
-      ? "फ़ाइल"
-      : "File",
-
-    purpose: isHindi
-      ? "उद्देश्य"
-      : "Purpose",
-
-    added: isHindi
-      ? "जोड़ा गया"
-      : "Added",
-
-    aiAnalyzed: isHindi
-      ? "🤖 AI द्वारा विश्लेषित"
-      : "🤖 AI ANALYZED",
-
-    selected: isHindi
-      ? "✓ चुना गया"
-      : "✓ SELECTED",
-
-    generateReport: isHindi
-      ? "📋 रिपोर्ट तैयार करें"
-      : "📋 Generate Report",
-
-    generatingReport: isHindi
-      ? "🤖 रिपोर्ट तैयार की जा रही है..."
-      : "🤖 Generating Report...",
-
-    uploadFirst: isHindi
-      ? "अपना दस्तावेज़ नहीं दिख रहा? पहले उसे Documents सेक्शन से अपलोड करें।"
-      : "Don't see your document? Upload it first from the Documents section.",
-
-    myDocuments: isHindi
-      ? "📤 मेरे दस्तावेज़ों पर जाएँ"
-      : "📤 Go to My Documents",
-
-    preConsultation: isHindi
-      ? "CLINOVA • प्री-कंसल्टेशन"
-      : "CLINOVA • PRE-CONSULTATION",
-
-    preConsultationReport: isHindi
-      ? "प्री-कंसल्टेशन रिपोर्ट"
-      : "Pre-Consultation Report",
-
-    basedOn: isHindi
-      ? "आधारित दस्तावेज़:"
-      : "Based on:",
-
-    aiDraft: isHindi
-      ? "AI ड्राफ्ट • सत्यापित नहीं"
-      : "AI DRAFT • UNVERIFIED",
-
-    important: isHindi
-      ? "महत्वपूर्ण:"
-      : "Important:",
-
-    reportWarning: isHindi
-      ? "यह उपलब्ध कराई गई जानकारी के आधार पर तैयार की गई AI-जनरेटेड प्रारंभिक रिपोर्ट है। यह कोई निदान या उपचार संबंधी सलाह नहीं है और इसे योग्य स्वास्थ्य विशेषज्ञ द्वारा समीक्षा किया जाना चाहिए।"
-      : "This is an AI-generated draft based on the information provided. It is not a diagnosis or treatment recommendation and should be reviewed by a qualified healthcare professional.",
-
-    chooseAnother: isHindi
-      ? "📄 दूसरा दस्तावेज़ चुनें"
-      : "📄 Choose Another Document",
-
-    shareWithDoctor: isHindi
-      ? "🔐 डॉक्टर के साथ साझा करें"
-      : "🔐 Share with Doctor",
-
-    dashboard: isHindi
-      ? "🏠 डैशबोर्ड"
-      : "🏠 Dashboard",
-
-    footer: isHindi
-      ? "आपकी रिपोर्ट एक प्रारंभिक AI-जनरेटेड ड्राफ्ट है। कृपया इसकी समीक्षा किसी योग्य स्वास्थ्य विशेषज्ञ से करवाएँ।"
-      : "Your report is a preliminary AI-generated draft. Please have it reviewed by a qualified healthcare professional.",
-
-    noDate: isHindi
-      ? "तारीख उपलब्ध नहीं"
-      : "Date not available",
-
-    loadError: isHindi
-      ? "आपके सेव किए गए दस्तावेज़ लोड नहीं हो सके।"
-      : "Unable to load your saved documents.",
-
-    selectDocumentError: isHindi
-      ? "कृपया पहले एक मेडिकल दस्तावेज़ चुनें।"
-      : "Please select a medical document first.",
-
-    reportError: isHindi
-      ? "रिपोर्ट तैयार नहीं हो सकी।"
-      : "Unable to generate pre-report.",
-
-    noReport: isHindi
-      ? "कोई प्री-रिपोर्ट प्राप्त नहीं हुई।"
-      : "No pre-report was returned.",
-  };
-
-  /*
-   * =========================================================
-   * LOAD SAVED DOCUMENTS
-   * =========================================================
-   */
-
-  useEffect(() => {
-    loadSavedDocuments();
-  }, []);
-
-  const loadSavedDocuments = async () => {
+  const loadDocuments = async () => {
     try {
       setLoadingDocuments(true);
-      setError("");
 
-      const saved = await getDocumentsFromDB();
+      const saved =
+        await getDocumentsFromDB();
 
       const patientId =
         localStorage.getItem(
@@ -291,123 +489,249 @@ export default function PreReport() {
           )
         : saved;
 
-      patientDocuments.sort(
-        (a, b) =>
-          (b.createdAt || 0) -
-          (a.createdAt || 0)
-      );
-
       setDocuments(patientDocuments);
     } catch (err) {
       console.error(
-        "Unable to load saved documents:",
+        "Document loading error:",
         err
       );
 
-      setError(t.loadError);
+      setError(t.error);
     } finally {
       setLoadingDocuments(false);
     }
   };
 
   /*
-   * =========================================================
-   * LOCAL STORAGE HELPERS
-   * =========================================================
-   */
+  =========================================================
+  STEP 1
+  GENERATE QUESTIONS
+  =========================================================
+  */
 
-  const getLocalStorageData = (
-    key,
-    fallback
-  ) => {
-    try {
-      const value =
-        localStorage.getItem(key);
-
-      if (!value) {
-        return fallback;
-      }
-
-      return JSON.parse(value);
-    } catch (err) {
-      console.error(
-        `Failed to read ${key}:`,
-        err
+  const generateQuestions = async () => {
+    if (!symptoms.trim()) {
+      setError(
+        isHindi
+          ? "कृपया अपने लक्षण लिखें।"
+          : "Please describe your symptoms."
       );
 
-      return fallback;
-    }
-  };
-
-  /*
-   * =========================================================
-   * SELECT DOCUMENT
-   * =========================================================
-   */
-
-  const handleSelectDocument = (
-    document
-  ) => {
-    setSelectedDocument(document);
-    setError("");
-  };
-
-  /*
-   * =========================================================
-   * GENERATE REPORT
-   * =========================================================
-   */
-
-  const generateReport = async () => {
-    if (!selectedDocument) {
-      setError(t.selectDocumentError);
       return;
     }
 
     try {
-      setGenerating(true);
+      setLoadingQuestions(true);
       setError("");
-      setReport("");
-      setShowReport(false);
 
-      const history =
-        getLocalStorageData(
-          "clinovaInterviewHistory",
-          {}
+      const response = await fetch(
+        "/api/generateQuestions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            symptoms,
+            language,
+            languageName: isHindi
+              ? "Hindi"
+              : "English",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Gemini question generation failed"
+        );
+      }
+
+      const data =
+        await response.json();
+
+      let generatedQuestions =
+        data?.questions || [];
+
+      /*
+       * Gemini response validation
+       */
+
+      if (
+        !Array.isArray(
+          generatedQuestions
+        ) ||
+        generatedQuestions.length === 0
+      ) {
+        throw new Error(
+          "Invalid Gemini questions"
+        );
+      }
+
+      generatedQuestions =
+        generatedQuestions
+          .map((item, index) => ({
+            id:
+              item.id ||
+              `question_${index}`,
+            question:
+              item.question ||
+              item.text ||
+              "",
+            type: "text",
+          }))
+          .filter(
+            (item) => item.question
+          );
+
+      if (
+        generatedQuestions.length === 0
+      ) {
+        throw new Error(
+          "No valid questions"
+        );
+      }
+
+      setQuestions(
+        generatedQuestions.slice(0, 8)
+      );
+
+      setStep(2);
+    } catch (err) {
+      /*
+       * =====================================================
+       * GEMINI BACKUP
+       * =====================================================
+       */
+
+      console.warn(
+        "Gemini unavailable. Using backup questions.",
+        err
+      );
+
+      const backup =
+        getBackupQuestions(symptoms);
+
+      setQuestions(backup);
+
+      setStep(2);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  /*
+  =========================================================
+  ANSWERS
+  =========================================================
+  */
+
+  const updateAnswer = (
+    questionId,
+    value
+  ) => {
+    setAnswers((previous) => ({
+      ...previous,
+      [questionId]: value,
+    }));
+  };
+
+  const continueToDocuments = () => {
+    setError("");
+
+    loadDocuments();
+
+    setStep(3);
+  };
+
+  /*
+  =========================================================
+  DOCUMENT SELECTION
+  =========================================================
+  */
+
+  const toggleDocument = (
+    document
+  ) => {
+    setSelectedDocuments(
+      (previous) => {
+        const exists =
+          previous.some(
+            (item) =>
+              item.id === document.id
+          );
+
+        if (exists) {
+          return previous.filter(
+            (item) =>
+              item.id !== document.id
+          );
+        }
+
+        return [
+          ...previous,
+          document,
+        ];
+      }
+    );
+  };
+
+  /*
+  =========================================================
+  GENERATE REPORT
+  =========================================================
+  */
+
+  const generateReport = async () => {
+    try {
+      setGeneratingReport(true);
+      setError("");
+
+      const patientData =
+        JSON.parse(
+          localStorage.getItem(
+            "clinovaPatient"
+          ) || "{}"
         );
 
-      const documentForReport = {
-        id: selectedDocument.id,
+      const reportDocuments =
+        selectedDocuments.map(
+          (document) => ({
+            id: document.id,
+            documentName:
+              document.documentName ||
+              document.fileName,
+            fileName:
+              document.fileName,
+            fileType:
+              document.fileType,
+            purpose:
+              document.purpose || "",
+            createdAt:
+              document.createdAt ||
+              null,
+            analyzed:
+              Boolean(
+                document.analyzed
+              ),
+            extracted:
+              document.extracted ||
+              null,
+          })
+        );
 
-        documentName:
-          selectedDocument.documentName ||
-          selectedDocument.fileName,
-
-        fileName:
-          selectedDocument.fileName,
-
-        fileType:
-          selectedDocument.fileType,
-
-        purpose:
-          selectedDocument.purpose || "",
-
-        createdAt:
-          selectedDocument.createdAt || null,
-
-        analyzed:
-          Boolean(
-            selectedDocument.analyzed
-          ),
-
-        extracted:
-          selectedDocument.extracted || null,
-      };
-
-      console.log(
-        "Generating report with selected document:",
-        documentForReport
-      );
+      const formattedAnswers =
+        questions.map(
+          (question) => ({
+            question:
+              question.question,
+            answer:
+              answers[
+                question.id
+              ] || "Not provided",
+          })
+        );
 
       const response = await fetch(
         "/api/generatePreReport",
@@ -420,48 +744,48 @@ export default function PreReport() {
           },
 
           body: JSON.stringify({
-            history,
+            patient: patientData,
 
-            documents: [
-              documentForReport,
-            ],
+            symptoms,
 
-            /*
-             * IMPORTANT:
-             * Tell backend/Gemini which language
-             * the patient selected.
-             */
-            language: language,
+            answers:
+              formattedAnswers,
 
-            languageName: isHindi
-              ? "Hindi"
-              : "English",
+            documents:
+              reportDocuments,
+
+            language,
+
+            languageName:
+              isHindi
+                ? "Hindi"
+                : "English",
           }),
         }
       );
 
       const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      console.log(
-        "Pre-report API response:",
-        data
-      );
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data?.error || t.reportError
+          data?.error ||
+            "Unable to generate report"
         );
       }
 
       if (!data?.report) {
-        throw new Error(t.noReport);
+        throw new Error(
+          "No report returned"
+        );
       }
 
       setReport(data.report);
-      setShowReport(true);
+
+      /*
+       * Save locally so ShareAccess
+       * can use the generated report.
+       */
 
       localStorage.setItem(
         "clinovaPreReport",
@@ -469,43 +793,38 @@ export default function PreReport() {
       );
 
       localStorage.setItem(
-        "clinovaSelectedReportDocument",
-        JSON.stringify(
-          documentForReport
-        )
+        "clinovaPreReportData",
+        JSON.stringify({
+          symptoms,
+          answers:
+            formattedAnswers,
+          documents:
+            reportDocuments,
+          generatedAt:
+            new Date().toISOString(),
+        })
       );
+
+      setStep(4);
     } catch (err) {
       console.error(
-        "Pre-report error:",
+        "Pre-report generation error:",
         err
       );
 
       setError(
-        err?.message || t.reportError
+        err?.message || t.error
       );
     } finally {
-      setGenerating(false);
+      setGeneratingReport(false);
     }
   };
 
   /*
-   * =========================================================
-   * NAVIGATION
-   * =========================================================
-   */
-
-  const goToDashboard = () => {
-    navigate("/patient/dashboard");
-  };
-
-  const goToDocuments = () => {
-    localStorage.setItem(
-      "clinovaDocumentFlow",
-      "dashboard"
-    );
-
-    navigate("/documents");
-  };
+  =========================================================
+  SHARE WITH DOCTOR
+  =========================================================
+  */
 
   const shareWithDoctor = () => {
     localStorage.setItem(
@@ -517,63 +836,32 @@ export default function PreReport() {
   };
 
   /*
-   * =========================================================
-   * HELPERS
-   * =========================================================
-   */
+  =========================================================
+  DASHBOARD
+  =========================================================
+  */
 
-  const formatFileSize = (bytes) => {
-    if (!bytes) {
-      return "0 KB";
-    }
-
-    if (bytes < 1024 * 1024) {
-      return `${(
-        bytes / 1024
-      ).toFixed(1)} KB`;
-    }
-
-    return `${(
-      bytes /
-      (1024 * 1024)
-    ).toFixed(2)} MB`;
-  };
-
-  const formatDate = (timestamp) => {
-    if (!timestamp) {
-      return t.noDate;
-    }
-
-    return new Date(
-      timestamp
-    ).toLocaleDateString(
-      isHindi ? "hi-IN" : "en-IN",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }
-    );
+  const goDashboard = () => {
+    navigate("/patient/dashboard");
   };
 
   /*
-   * =========================================================
-   * RENDER
-   * =========================================================
-   */
+  =========================================================
+  UI
+  =========================================================
+  */
 
   return (
     <div
       style={{
         minHeight: "100vh",
         background: "#F6F8F7",
-        padding: "40px 20px",
-        boxSizing: "border-box",
+        padding: "30px 20px",
       }}
     >
       <div
         style={{
-          maxWidth: "850px",
+          maxWidth: "900px",
           margin: "0 auto",
         }}
       >
@@ -584,24 +872,23 @@ export default function PreReport() {
           style={{
             background: "#FFFFFF",
             borderRadius: "20px",
-            padding: "32px",
+            padding: "28px",
             boxShadow:
               "0 4px 20px rgba(0,0,0,0.06)",
           }}
         >
           <button
-            onClick={goToDashboard}
+            onClick={goDashboard}
             style={{
               border: "none",
               background: "transparent",
               color: "#0E6E64",
               fontWeight: "700",
               cursor: "pointer",
-              padding: 0,
-              marginBottom: "20px",
+              marginBottom: "15px",
             }}
           >
-            {t.backToDashboard}
+            {t.back}
           </button>
 
           <p
@@ -609,32 +896,77 @@ export default function PreReport() {
               color: "#0E6E64",
               fontWeight: "700",
               fontSize: "13px",
-              marginBottom: "8px",
             }}
           >
-            {t.reportGeneration}
+            CLINOVA • PRE-CONSULTATION
           </p>
 
           <h1
             style={{
               margin: 0,
-              color: "#1F2937",
               fontSize: "30px",
+              color: "#1F2937",
             }}
           >
-            {t.generatePreReport}
+            {t.title}
           </h1>
 
           <p
             style={{
               color: "#6B7280",
               lineHeight: 1.6,
-              marginTop: "12px",
-              marginBottom: 0,
             }}
           >
-            {t.reportDescription}
+            {t.subtitle}
           </p>
+
+          {/* PROGRESS */}
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(4, 1fr)",
+              gap: "8px",
+              marginTop: "25px",
+            }}
+          >
+            {[
+              t.step1,
+              t.step2,
+              t.step3,
+              t.step4,
+            ].map(
+              (item, index) => {
+                const active =
+                  step >= index + 1;
+
+                return (
+                  <div
+                    key={item}
+                    style={{
+                      padding: "9px",
+                      borderRadius: "8px",
+                      textAlign: "center",
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      background:
+                        active
+                          ? "#EAF5F3"
+                          : "#F3F4F6",
+                      color:
+                        active
+                          ? "#0E6E64"
+                          : "#9CA3AF",
+                    }}
+                  >
+                    {index + 1}.{" "}
+                    {item}
+                  </div>
+                );
+              }
+            )}
+          </div>
         </div>
 
         {/* ERROR */}
@@ -649,16 +981,17 @@ export default function PreReport() {
               border:
                 "1px solid #FCA5A5",
               color: "#B91C1C",
-              lineHeight: 1.5,
             }}
           >
             {error}
           </div>
         )}
 
-        {/* DOCUMENT SELECTION */}
+        {/* =================================================
+            STEP 1
+            ================================================= */}
 
-        {!showReport && (
+        {step === 1 && (
           <div
             style={{
               marginTop: "22px",
@@ -669,120 +1002,232 @@ export default function PreReport() {
                 "0 4px 20px rgba(0,0,0,0.06)",
             }}
           >
-            <div
+            <h2
               style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                alignItems: "center",
-                gap: "10px",
-                flexWrap: "wrap",
+                color: "#1F2937",
               }}
             >
-              <div>
-                <h2
+              {t.symptomsTitle}
+            </h2>
+
+            <textarea
+              value={symptoms}
+              onChange={(e) =>
+                setSymptoms(
+                  e.target.value
+                )
+              }
+              placeholder={
+                t.symptomsPlaceholder
+              }
+              rows={7}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "16px",
+                borderRadius: "14px",
+                border:
+                  "1px solid #D1D5DB",
+                resize: "vertical",
+                fontSize: "15px",
+                outline: "none",
+              }}
+            />
+
+            <button
+              onClick={
+                generateQuestions
+              }
+              disabled={
+                loadingQuestions
+              }
+              style={{
+                width: "100%",
+                marginTop: "20px",
+                padding: "15px",
+                border: "none",
+                borderRadius: "12px",
+                background:
+                  loadingQuestions
+                    ? "#9CA3AF"
+                    : "#0E6E64",
+                color: "#FFFFFF",
+                fontWeight: "700",
+                fontSize: "16px",
+                cursor:
+                  loadingQuestions
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+            >
+              {loadingQuestions
+                ? "🤖 Generating Questions..."
+                : t.continue}
+            </button>
+          </div>
+        )}
+
+        {/* =================================================
+            STEP 2
+            ================================================= */}
+
+        {step === 2 && (
+          <div
+            style={{
+              marginTop: "22px",
+              background: "#FFFFFF",
+              borderRadius: "20px",
+              padding: "32px",
+              boxShadow:
+                "0 4px 20px rgba(0,0,0,0.06)",
+            }}
+          >
+            <h2
+              style={{
+                color: "#1F2937",
+              }}
+            >
+              {t.questionsTitle}
+            </h2>
+
+            <p
+              style={{
+                color: "#6B7280",
+              }}
+            >
+              {t.questionsDescription}
+            </p>
+
+            {questions.map(
+              (question, index) => (
+                <div
+                  key={question.id}
                   style={{
-                    margin: 0,
-                    color: "#1F2937",
+                    marginTop: "22px",
                   }}
                 >
-                  {t.selectDocument}
-                </h2>
+                  <label
+                    style={{
+                      display: "block",
+                      fontWeight: "700",
+                      color: "#374151",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    {index + 1}.{" "}
+                    {question.question}
+                  </label>
 
-                <p
-                  style={{
-                    color: "#6B7280",
-                    marginBottom: 0,
-                  }}
-                >
-                  {t.selectDocumentDescription}
-                </p>
-              </div>
+                  <textarea
+                    rows={3}
+                    value={
+                      answers[
+                        question.id
+                      ] || ""
+                    }
+                    onChange={(e) =>
+                      updateAnswer(
+                        question.id,
+                        e.target.value
+                      )
+                    }
+                    placeholder={
+                      t.answerPlaceholder
+                    }
+                    style={{
+                      width: "100%",
+                      boxSizing:
+                        "border-box",
+                      padding: "13px",
+                      borderRadius: "12px",
+                      border:
+                        "1px solid #D1D5DB",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+              )
+            )}
 
-              <span
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: "999px",
-                  background: "#EAF5F3",
-                  color: "#0E6E64",
-                  fontSize: "12px",
-                  fontWeight: "700",
-                }}
-              >
-                {documents.length}{" "}
-                {documents.length === 1
-                  ? t.document
-                  : t.documents}
-              </span>
-            </div>
+            <button
+              onClick={
+                continueToDocuments
+              }
+              style={{
+                width: "100%",
+                marginTop: "25px",
+                padding: "15px",
+                border: "none",
+                borderRadius: "12px",
+                background: "#0E6E64",
+                color: "#FFFFFF",
+                fontWeight: "700",
+                fontSize: "16px",
+                cursor: "pointer",
+              }}
+            >
+              {t.next}
+            </button>
+          </div>
+        )}
+
+        {/* =================================================
+            STEP 3
+            ================================================= */}
+
+        {step === 3 && (
+          <div
+            style={{
+              marginTop: "22px",
+              background: "#FFFFFF",
+              borderRadius: "20px",
+              padding: "32px",
+              boxShadow:
+                "0 4px 20px rgba(0,0,0,0.06)",
+            }}
+          >
+            <h2
+              style={{
+                color: "#1F2937",
+              }}
+            >
+              {t.documentsTitle}
+            </h2>
+
+            <p
+              style={{
+                color: "#6B7280",
+              }}
+            >
+              {t.documentsDescription}
+            </p>
 
             {loadingDocuments ? (
-              <div
+              <p
                 style={{
-                  marginTop: "25px",
                   color: "#6B7280",
+                  marginTop: "25px",
                 }}
               >
-                {t.loadingDocuments}
-              </div>
+                Loading documents...
+              </p>
             ) : documents.length === 0 ? (
               <div
                 style={{
-                  marginTop: "25px",
-                  padding: "30px",
-                  borderRadius: "14px",
+                  marginTop: "20px",
+                  padding: "25px",
                   background: "#F9FAFB",
+                  borderRadius: "14px",
                   textAlign: "center",
+                  color: "#6B7280",
                 }}
               >
-                <div
-                  style={{
-                    fontSize: "40px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  📂
-                </div>
-
-                <h3
-                  style={{
-                    color: "#374151",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {t.noDocuments}
-                </h3>
-
-                <p
-                  style={{
-                    color: "#6B7280",
-                    fontSize: "14px",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {t.noDocumentsDescription}
-                </p>
-
-                <button
-                  onClick={goToDocuments}
-                  style={{
-                    marginTop: "10px",
-                    padding: "12px 18px",
-                    border: "none",
-                    borderRadius: "10px",
-                    background: "#0E6E64",
-                    color: "#FFFFFF",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                  }}
-                >
-                  {t.goToDocuments}
-                </button>
+                📂 {t.noDocumentsFound}
               </div>
             ) : (
               <div
                 style={{
-                  marginTop: "22px",
+                  marginTop: "20px",
                   display: "flex",
                   flexDirection: "column",
                   gap: "12px",
@@ -790,172 +1235,78 @@ export default function PreReport() {
               >
                 {documents.map(
                   (document) => {
-                    const isSelected =
-                      selectedDocument?.id ===
-                      document.id;
+                    const selected =
+                      selectedDocuments.some(
+                        (item) =>
+                          item.id ===
+                          document.id
+                      );
 
                     return (
                       <button
                         key={document.id}
                         onClick={() =>
-                          handleSelectDocument(
+                          toggleDocument(
                             document
                           )
                         }
                         style={{
-                          width: "100%",
                           textAlign: "left",
-                          padding: "18px",
+                          padding: "17px",
                           borderRadius: "14px",
-
-                          border: isSelected
+                          border: selected
                             ? "2px solid #0E6E64"
                             : "1px solid #E5E7EB",
-
                           background:
-                            isSelected
+                            selected
                               ? "#EAF5F3"
                               : "#F9FAFB",
-
                           cursor: "pointer",
-                          boxSizing: "border-box",
                         }}
                       >
-                        <div
+                        <strong>
+                          📄{" "}
+                          {document.documentName ||
+                            document.fileName}
+                        </strong>
+
+                        <p
                           style={{
-                            display: "flex",
-                            justifyContent:
-                              "space-between",
-                            alignItems:
-                              "flex-start",
-                            gap: "15px",
+                            margin:
+                              "6px 0 0",
+                            color:
+                              "#6B7280",
+                            fontSize:
+                              "13px",
                           }}
                         >
-                          <div>
-                            <h3
-                              style={{
-                                margin:
-                                  "0 0 6px",
-                                color:
-                                  "#1F2937",
-                              }}
-                            >
-                              📄{" "}
-                              {document.documentName ||
-                                document.fileName}
-                            </h3>
+                          {document.fileName}
+                        </p>
 
-                            <p
-                              style={{
-                                margin:
-                                  "0 0 5px",
-                                color:
-                                  "#6B7280",
-                                fontSize:
-                                  "13px",
-                              }}
-                            >
-                              {t.file}:{" "}
-                              {
-                                document.fileName
-                              }
-                            </p>
-
-                            {document.purpose && (
-                              <p
-                                style={{
-                                  margin:
-                                    "0 0 5px",
-                                  color:
-                                    "#6B7280",
-                                  fontSize:
-                                    "13px",
-                                }}
-                              >
-                                {t.purpose}:{" "}
-                                {
-                                  document.purpose
-                                }
-                              </p>
-                            )}
-
-                            <p
-                              style={{
-                                margin: 0,
-                                color:
-                                  "#9CA3AF",
-                                fontSize:
-                                  "12px",
-                              }}
-                            >
-                              {t.added}:{" "}
-                              {formatDate(
-                                document.createdAt
-                              )}{" "}
-                              •{" "}
-                              {formatFileSize(
-                                document.fileSize
-                              )}
-                            </p>
-                          </div>
-
-                          <div
+                        {selected && (
+                          <span
                             style={{
-                              display: "flex",
-                              flexDirection:
-                                "column",
-                              alignItems:
-                                "flex-end",
-                              gap: "6px",
+                              display:
+                                "inline-block",
+                              marginTop:
+                                "8px",
+                              padding:
+                                "4px 9px",
+                              borderRadius:
+                                "999px",
+                              background:
+                                "#0E6E64",
+                              color:
+                                "#FFFFFF",
+                              fontSize:
+                                "11px",
+                              fontWeight:
+                                "700",
                             }}
                           >
-                            {document.analyzed && (
-                              <span
-                                style={{
-                                  padding:
-                                    "5px 9px",
-                                  borderRadius:
-                                    "999px",
-                                  background:
-                                    "#ECFDF5",
-                                  color:
-                                    "#047857",
-                                  fontSize:
-                                    "10px",
-                                  fontWeight:
-                                    "700",
-                                  whiteSpace:
-                                    "nowrap",
-                                }}
-                              >
-                                {t.aiAnalyzed}
-                              </span>
-                            )}
-
-                            {isSelected && (
-                              <span
-                                style={{
-                                  padding:
-                                    "5px 9px",
-                                  borderRadius:
-                                    "999px",
-                                  background:
-                                    "#0E6E64",
-                                  color:
-                                    "#FFFFFF",
-                                  fontSize:
-                                    "10px",
-                                  fontWeight:
-                                    "700",
-                                  whiteSpace:
-                                    "nowrap",
-                                }}
-                              >
-                                {t.selected}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                            ✓ {t.selected}
+                          </span>
+                        )}
                       </button>
                     );
                   }
@@ -963,246 +1314,512 @@ export default function PreReport() {
               </div>
             )}
 
-            {/* GENERATE BUTTON */}
-
-            {documents.length > 0 && (
-              <button
-                onClick={generateReport}
-                disabled={
-                  !selectedDocument ||
-                  generating
-                }
-                style={{
-                  width: "100%",
-                  marginTop: "22px",
-                  padding: "15px",
-                  border: "none",
-                  borderRadius: "12px",
-
-                  background:
-                    !selectedDocument ||
-                    generating
-                      ? "#9CA3AF"
-                      : "#0E6E64",
-
-                  color: "#FFFFFF",
-                  fontSize: "16px",
-                  fontWeight: "700",
-
-                  cursor:
-                    !selectedDocument ||
-                    generating
-                      ? "not-allowed"
-                      : "pointer",
-                }}
-              >
-                {generating
-                  ? t.generatingReport
-                  : t.generateReport}
-              </button>
-            )}
-
-            <p
+            <button
+              onClick={
+                generateReport
+              }
+              disabled={
+                generatingReport
+              }
               style={{
-                marginTop: "16px",
-                textAlign: "center",
-                color: "#9CA3AF",
-                fontSize: "12px",
+                width: "100%",
+                marginTop: "25px",
+                padding: "15px",
+                border: "none",
+                borderRadius: "12px",
+                background:
+                  generatingReport
+                    ? "#9CA3AF"
+                    : "#0E6E64",
+                color: "#FFFFFF",
+                fontWeight: "700",
+                fontSize: "16px",
+                cursor:
+                  generatingReport
+                    ? "not-allowed"
+                    : "pointer",
               }}
             >
-              {t.uploadFirst}
-            </p>
+              {generatingReport
+                ? t.generating
+                : t.generate}
+            </button>
 
             <button
-              onClick={goToDocuments}
+              onClick={() =>
+                setStep(2)
+              }
               style={{
-                display: "block",
-                margin: "0 auto",
-                border: "none",
-                background:
-                  "transparent",
-                color: "#0E6E64",
-                fontWeight: "700",
+                width: "100%",
+                marginTop: "10px",
+                padding: "13px",
+                border:
+                  "1px solid #D1D5DB",
+                borderRadius: "12px",
+                background: "#FFFFFF",
+                color: "#374151",
+                fontWeight: "600",
                 cursor: "pointer",
               }}
             >
-              {t.myDocuments}
+              {t.back}
             </button>
           </div>
         )}
 
         {/* =================================================
-            GENERATED REPORT
+            STEP 4 — A4 DIGITAL REPORT
             ================================================= */}
 
-        {showReport && (
+        {step === 4 && (
           <div
             style={{
               marginTop: "22px",
-              background: "#FFFFFF",
-              borderRadius: "20px",
-              padding: "32px",
-              boxShadow:
-                "0 4px 20px rgba(0,0,0,0.06)",
             }}
           >
             <div
               style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                alignItems:
-                  "flex-start",
-                gap: "15px",
-                flexWrap: "wrap",
+                background: "#FFFFFF",
+                width: "210mm",
+                maxWidth: "100%",
+                minHeight: "297mm",
+                margin: "0 auto",
+                padding: "22mm",
+                boxSizing: "border-box",
+                boxShadow:
+                  "0 5px 25px rgba(0,0,0,0.10)",
+                borderRadius: "4px",
               }}
             >
-              <div>
-                <p
+              {/* REPORT HEADER */}
+
+              <div
+                style={{
+                  borderBottom:
+                    "2px solid #0E6E64",
+                  paddingBottom:
+                    "18px",
+                  marginBottom:
+                    "25px",
+                }}
+              >
+                <div
                   style={{
-                    color: "#0E6E64",
-                    fontWeight: "700",
-                    fontSize: "13px",
-                    marginBottom: "8px",
+                    display: "flex",
+                    justifyContent:
+                      "space-between",
+                    gap: "20px",
                   }}
                 >
-                  {t.preConsultation}
-                </p>
+                  <div>
+                    <h1
+                      style={{
+                        margin: 0,
+                        color:
+                          "#0E6E64",
+                        fontSize:
+                          "28px",
+                      }}
+                    >
+                      CLINOVA
+                    </h1>
 
-                <h1
-                  style={{
-                    margin: 0,
-                    color: "#1F2937",
-                    fontSize: "30px",
-                  }}
-                >
-                  {t.preConsultationReport}
-                </h1>
+                    <p
+                      style={{
+                        margin:
+                          "5px 0 0",
+                        color:
+                          "#6B7280",
+                        fontSize:
+                          "12px",
+                      }}
+                    >
+                      DIGITAL HEALTH
+                      PLATFORM
+                    </p>
+                  </div>
 
-                {selectedDocument && (
-                  <p
+                  <div
                     style={{
-                      color: "#6B7280",
-                      marginTop: "10px",
+                      textAlign:
+                        "right",
                     }}
                   >
-                    {t.basedOn}{" "}
-                    <strong>
-                      {selectedDocument.documentName ||
-                        selectedDocument.fileName}
+                    <strong
+                      style={{
+                        fontSize:
+                          "14px",
+                        color:
+                          "#374151",
+                      }}
+                    >
+                      {t.reportTitle}
                     </strong>
-                  </p>
-                )}
+
+                    <p
+                      style={{
+                        margin:
+                          "6px 0 0",
+                        fontSize:
+                          "11px",
+                        color:
+                          "#6B7280",
+                      }}
+                    >
+                      {new Date().toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <span
+              {/* REPORT STATUS */}
+
+              <div
                 style={{
-                  padding: "7px 12px",
-                  borderRadius: "999px",
-                  background: "#FFF7ED",
-                  color: "#C2410C",
-                  fontSize: "12px",
-                  fontWeight: "700",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  background:
+                    "#FFF7ED",
+                  color:
+                    "#9A3412",
+                  fontSize:
+                    "11px",
+                  fontWeight:
+                    "700",
+                  marginBottom:
+                    "20px",
                 }}
               >
                 {t.aiDraft}
-              </span>
-            </div>
+              </div>
 
-            <div
-              style={{
-                marginTop: "28px",
-                padding: "24px",
-                borderRadius: "14px",
-                background: "#F9FAFB",
-                border:
-                  "1px solid #E5E7EB",
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.7,
-                color: "#374151",
-              }}
-            >
-              {report}
-            </div>
+              {/* SYMPTOMS */}
 
-            <div
-              style={{
-                marginTop: "22px",
-                padding: "16px",
-                borderRadius: "12px",
-                background: "#FFF7ED",
-                border:
-                  "1px solid #FED7AA",
-                color: "#9A3412",
-                lineHeight: 1.5,
-                fontSize: "13px",
-              }}
-            >
-              <strong>
-                {t.important}
-              </strong>{" "}
-              {t.reportWarning}
+              <section
+                style={{
+                  marginBottom:
+                    "24px",
+                }}
+              >
+                <h3
+                  style={{
+                    color:
+                      "#1F2937",
+                    borderBottom:
+                      "1px solid #E5E7EB",
+                    paddingBottom:
+                      "7px",
+                  }}
+                >
+                  Presenting Symptoms
+                </h3>
+
+                <p
+                  style={{
+                    whiteSpace:
+                      "pre-wrap",
+                    lineHeight:
+                      1.7,
+                    color:
+                      "#374151",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  {symptoms}
+                </p>
+              </section>
+
+              {/* QUESTIONS + ANSWERS */}
+
+              <section
+                style={{
+                  marginBottom:
+                    "24px",
+                }}
+              >
+                <h3
+                  style={{
+                    color:
+                      "#1F2937",
+                    borderBottom:
+                      "1px solid #E5E7EB",
+                    paddingBottom:
+                      "7px",
+                  }}
+                >
+                  Patient Responses
+                </h3>
+
+                {questions.map(
+                  (question) => (
+                    <div
+                      key={
+                        question.id
+                      }
+                      style={{
+                        marginBottom:
+                          "14px",
+                      }}
+                    >
+                      <strong
+                        style={{
+                          fontSize:
+                            "12px",
+                          color:
+                            "#374151",
+                        }}
+                      >
+                        {question.question}
+                      </strong>
+
+                      <p
+                        style={{
+                          margin:
+                            "4px 0 0",
+                          fontSize:
+                            "12px",
+                          color:
+                            "#6B7280",
+                          lineHeight:
+                            1.5,
+                        }}
+                      >
+                        {answers[
+                          question.id
+                        ] ||
+                          "Not provided"}
+                      </p>
+                    </div>
+                  )
+                )}
+              </section>
+
+              {/* DOCUMENTS */}
+
+              <section
+                style={{
+                  marginBottom:
+                    "24px",
+                }}
+              >
+                <h3
+                  style={{
+                    color:
+                      "#1F2937",
+                    borderBottom:
+                      "1px solid #E5E7EB",
+                    paddingBottom:
+                      "7px",
+                  }}
+                >
+                  Supporting Documents
+                </h3>
+
+                {selectedDocuments.length ===
+                0 ? (
+                  <p
+                    style={{
+                      color:
+                        "#6B7280",
+                      fontSize:
+                        "12px",
+                    }}
+                  >
+                    No documents
+                    provided.
+                  </p>
+                ) : (
+                  selectedDocuments.map(
+                    (document) => (
+                      <p
+                        key={
+                          document.id
+                        }
+                        style={{
+                          fontSize:
+                            "12px",
+                          margin:
+                            "7px 0",
+                        }}
+                      >
+                        📄{" "}
+                        {document.documentName ||
+                          document.fileName}
+                      </p>
+                    )
+                  )
+                )}
+              </section>
+
+              {/* AI REPORT */}
+
+              <section
+                style={{
+                  marginBottom:
+                    "24px",
+                }}
+              >
+                <h3
+                  style={{
+                    color:
+                      "#1F2937",
+                    borderBottom:
+                      "1px solid #E5E7EB",
+                    paddingBottom:
+                      "7px",
+                  }}
+                >
+                  AI-Generated Preliminary Summary
+                </h3>
+
+                <div
+                  style={{
+                    whiteSpace:
+                      "pre-wrap",
+                    lineHeight:
+                      1.7,
+                    color:
+                      "#374151",
+                    fontSize:
+                      "12px",
+                  }}
+                >
+                  {report}
+                </div>
+              </section>
+
+              {/* WARNING */}
+
+              <div
+                style={{
+                  padding: "13px",
+                  background:
+                    "#F9FAFB",
+                  border:
+                    "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  fontSize:
+                    "10px",
+                  color:
+                    "#6B7280",
+                  lineHeight:
+                    1.5,
+                }}
+              >
+                <strong>
+                  Important:
+                </strong>{" "}
+                {t.reportWarning}
+              </div>
+
+              {/* FOOTER */}
+
+              <div
+                style={{
+                  marginTop:
+                    "25px",
+                  paddingTop:
+                    "12px",
+                  borderTop:
+                    "1px solid #E5E7EB",
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  fontSize:
+                    "9px",
+                  color:
+                    "#9CA3AF",
+                }}
+              >
+                <span>
+                  Clinova Digital
+                  Health Platform
+                </span>
+
+                <span>
+                  Preliminary Report
+                </span>
+              </div>
             </div>
 
             {/* ACTION BUTTONS */}
 
             <div
               style={{
+                maxWidth:
+                  "850px",
+                margin:
+                  "20px auto",
                 display: "grid",
                 gridTemplateColumns:
                   "repeat(auto-fit, minmax(200px, 1fr))",
                 gap: "12px",
-                marginTop: "22px",
               }}
             >
               <button
-                onClick={() => {
-                  setShowReport(false);
-                  setReport("");
+                onClick={
+                  shareWithDoctor
+                }
+                style={{
+                  padding: "14px",
+                  border: "none",
+                  borderRadius:
+                    "12px",
+                  background:
+                    "#0E6E64",
+                  color:
+                    "#FFFFFF",
+                  fontWeight:
+                    "700",
+                  cursor:
+                    "pointer",
                 }}
+              >
+                {t.share}
+              </button>
+
+              <button
+                onClick={() =>
+                  setStep(1)
+                }
                 style={{
                   padding: "14px",
                   border:
                     "1px solid #0E6E64",
-                  borderRadius: "12px",
-                  background: "#FFFFFF",
-                  color: "#0E6E64",
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  cursor: "pointer",
+                  borderRadius:
+                    "12px",
+                  background:
+                    "#FFFFFF",
+                  color:
+                    "#0E6E64",
+                  fontWeight:
+                    "700",
+                  cursor:
+                    "pointer",
                 }}
               >
-                {t.chooseAnother}
+                Create New Report
               </button>
 
               <button
-                onClick={shareWithDoctor}
-                style={{
-                  padding: "14px",
-                  border: "none",
-                  borderRadius: "12px",
-                  background: "#0E6E64",
-                  color: "#FFFFFF",
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                }}
-              >
-                {t.shareWithDoctor}
-              </button>
-
-              <button
-                onClick={goToDashboard}
+                onClick={
+                  goDashboard
+                }
                 style={{
                   padding: "14px",
                   border:
                     "1px solid #D1D5DB",
-                  borderRadius: "12px",
-                  background: "#FFFFFF",
-                  color: "#374151",
-                  fontSize: "15px",
-                  fontWeight: "600",
-                  cursor: "pointer",
+                  borderRadius:
+                    "12px",
+                  background:
+                    "#FFFFFF",
+                  color:
+                    "#374151",
+                  fontWeight:
+                    "600",
+                  cursor:
+                    "pointer",
                 }}
               >
                 {t.dashboard}
@@ -1210,18 +1827,6 @@ export default function PreReport() {
             </div>
           </div>
         )}
-
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: "22px",
-            color: "#6B7280",
-            fontSize: "12px",
-            lineHeight: 1.5,
-          }}
-        >
-          {t.footer}
-        </p>
       </div>
     </div>
   );

@@ -6,61 +6,97 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import RoleSelection from "./pages/RoleSelection";
 
 // ========================================
-// PATIENT
+// PATIENT AUTH
 // ========================================
 import PatientLogin from "./pages/patient/PatientLogin";
 import PatientRegister from "./pages/patient/PatientRegister";
+
+// ========================================
+// PATIENT DASHBOARD
+// ========================================
 import PatientDashboard from "./pages/patient/PatientDashboard";
 
+// ========================================
+// PATIENT ONBOARDING
+// ========================================
 import Welcome from "./pages/patient/Welcome";
 import Language from "./pages/patient/Language";
 import Consent from "./pages/patient/Consent";
 import Identification from "./pages/patient/Identification";
 import CareSystemSelection from "./pages/patient/CareSystemSelection";
 
+// ========================================
+// PATIENT INTERVIEW
+// ========================================
 import Interview from "./pages/patient/interview/Interview";
 
+// ========================================
+// PATIENT DOCUMENTS
+// ========================================
 import DocumentUpload from "./pages/patient/documents/DocumentUpload";
 import Timeline from "./pages/patient/documents/Timeline";
 
+// ========================================
+// PATIENT MEDICAL RECORD
+// ========================================
 import HealthRecord from "./pages/patient/HealthRecord";
 import RecordSearch from "./pages/patient/RecordSearch";
 
+// ========================================
+// PATIENT SHARING
+// ========================================
 import ShareConsent from "./pages/patient/ShareConsent";
 import ShareAccess from "./pages/patient/ShareAccess";
 
+// ========================================
+// PRE-REPORT
+// ========================================
 import PreReport from "./pages/patient/PreReport";
-import BillingDashboard from "./pages/doctor/billing/BillingDashboard";
-import CreateBill from "./pages/doctor/billing/CreateBill";
-import BillDetails from "./pages/doctor/billing/BillDetails";
-import ExpenseManagement from "./pages/doctor/billing/ExpenseManagement";
 
 // ========================================
-// DOCTOR
+// DOCTOR AUTH
 // ========================================
 import DoctorLogin from "./pages/doctor/DoctorLogin";
 import DoctorRegister from "./pages/doctor/DoctorRegister";
 
+// ========================================
+// DOCTOR ACCESS
+// ========================================
 import EnterAccessCode from "./pages/doctor/EnterAccessCode";
+
+// ========================================
+// DOCTOR DASHBOARD
+// ========================================
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 
+// ========================================
+// DOCTOR PATIENT FEATURES
+// ========================================
 import PatientQueue from "./pages/doctor/PatientQueue";
 import AttentionLayer from "./pages/doctor/AttentionLayer";
-
 import ClinicalSummary from "./pages/doctor/ClinicalSummary";
 import DoctorVerification from "./pages/doctor/DoctorVerification";
-
-import EmergencyAccess from "./pages/doctor/EmergencyAccess";
-import AuditLog from "./pages/doctor/AuditLog";
-
 import PatientWorkspace from "./pages/doctor/PatientWorkspace";
 import DoctorPatientRecord from "./pages/doctor/DoctorPatientRecord";
 
+// ========================================
+// DOCTOR EMERGENCY + AUDIT
+// ========================================
+import EmergencyAccess from "./pages/doctor/EmergencyAccess";
+import AuditLog from "./pages/doctor/AuditLog";
+
+// ========================================
+// HEALTH TRENDS
+// ========================================
 import HealthTrends from "./pages/doctor/HealthTrends";
 
 // ========================================
 // DOCTOR BILLING
 // ========================================
+import BillingDashboard from "./pages/doctor/billing/BillingDashboard";
+import CreateBill from "./pages/doctor/billing/CreateBill";
+import BillDetails from "./pages/doctor/billing/BillDetails";
+import ExpenseManagement from "./pages/doctor/billing/ExpenseManagement";
 
 function App() {
   return (
@@ -76,7 +112,6 @@ function App() {
           element={<RoleSelection />}
         />
 
-
         {/* ========================================
             PATIENT AUTH
         ======================================== */}
@@ -91,7 +126,6 @@ function App() {
           element={<PatientRegister />}
         />
 
-
         {/* ========================================
             PATIENT DASHBOARD
         ======================================== */}
@@ -105,7 +139,6 @@ function App() {
           path="/patient"
           element={<PatientDashboard />}
         />
-
 
         {/* ========================================
             PATIENT ONBOARDING
@@ -136,11 +169,14 @@ function App() {
           element={<CareSystemSelection />}
         />
 
+        {/* ========================================
+            PATIENT INTERVIEW
+        ======================================== */}
+
         <Route
           path="/interview"
           element={<Interview />}
         />
-
 
         {/* ========================================
             PATIENT DOCUMENTS
@@ -150,7 +186,6 @@ function App() {
           path="/documents"
           element={<DocumentUpload />}
         />
-
 
         {/* ========================================
             PATIENT MEDICAL RECORD
@@ -171,7 +206,6 @@ function App() {
           element={<RecordSearch />}
         />
 
-
         {/* ========================================
             PATIENT SHARING
         ======================================== */}
@@ -186,10 +220,6 @@ function App() {
           element={<ShareAccess />}
         />
 
-<Route path="/doctor/billing" element={<BillingDashboard />} />
-<Route path="/doctor/billing/create" element={<CreateBill />} />
-<Route path="/doctor/billing/expenses" element={<ExpenseManagement />} />
-<Route path="/doctor/billing/:billId" element={<BillDetails />} />
         {/* ========================================
             PRE-REPORT
         ======================================== */}
@@ -199,9 +229,8 @@ function App() {
           element={<PreReport />}
         />
 
-
         {/* ========================================
-            DOCTOR LOGIN
+            DOCTOR AUTH
         ======================================== */}
 
         <Route
@@ -214,7 +243,6 @@ function App() {
           element={<DoctorRegister />}
         />
 
-
         {/* ========================================
             DOCTOR ACCESS CODE
         ======================================== */}
@@ -223,7 +251,6 @@ function App() {
           path="/doctor/enter-code"
           element={<EnterAccessCode />}
         />
-
 
         {/* ========================================
             DOCTOR DASHBOARD
@@ -234,7 +261,6 @@ function App() {
           element={<DoctorDashboard />}
         />
 
-
         {/* ========================================
             PATIENT QUEUE
         ======================================== */}
@@ -243,7 +269,6 @@ function App() {
           path="/doctor/queue"
           element={<PatientQueue />}
         />
-
 
         {/* ========================================
             PATIENT WORKSPACE
@@ -264,7 +289,6 @@ function App() {
           element={<DoctorPatientRecord />}
         />
 
-
         {/* ========================================
             ATTENTION LAYER
         ======================================== */}
@@ -273,7 +297,6 @@ function App() {
           path="/doctor/attention"
           element={<AttentionLayer />}
         />
-
 
         {/* ========================================
             CLINICAL SUMMARY
@@ -289,7 +312,6 @@ function App() {
           element={<ClinicalSummary />}
         />
 
-
         {/* ========================================
             DOCTOR VERIFICATION
         ======================================== */}
@@ -299,26 +321,19 @@ function App() {
           element={<DoctorVerification />}
         />
 
-
         {/* ========================================
             EMERGENCY ACCESS
         ======================================== */}
 
-        {/* Existing emergency route */}
         <Route
           path="/doctor/emergency"
           element={<EmergencyAccess />}
         />
 
-        {/* IMPORTANT:
-            PatientWorkspace is currently trying
-            to open this URL.
-        */}
         <Route
           path="/doctor/emergency-access"
           element={<EmergencyAccess />}
         />
-
 
         {/* ========================================
             AUDIT LOG
@@ -329,7 +344,6 @@ function App() {
           element={<AuditLog />}
         />
 
-
         {/* ========================================
             HEALTH TRENDS
         ======================================== */}
@@ -338,7 +352,6 @@ function App() {
           path="/doctor/health-trends"
           element={<HealthTrends />}
         />
-
 
         {/* ========================================
             BILLING

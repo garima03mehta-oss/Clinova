@@ -1,3 +1,5 @@
+// api/getAdaptiveQuestion.js
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -13,25 +15,39 @@ export default async function handler(req, res) {
   } = req.body || {};
 
   const selectedLanguage =
-    String(language).toLowerCase() === "hindi"
+    String(language).toLowerCase().trim() === "hindi"
       ? "hindi"
       : "english";
 
-  const apiKey =
-    process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  const safeHistory =
+    history && typeof history === "object"
+      ? history
+      : {};
 
   const chiefComplaint =
-    history.chiefComplaint ||
+    safeHistory.chiefComplaint ||
+    safeHistory.symptomText ||
+    safeHistory.symptoms ||
     symptomText ||
     "Not provided";
 
-  const historyEntries =
-    Object.entries(history).filter(
-      ([key]) => key !== "chiefComplaint"
-    );
+  const historyEntries = Object.entries(safeHistory).filter(
+    ([key, value]) =>
+      key !== "chiefComplaint" &&
+      key !== "symptomText" &&
+      key !== "symptoms" &&
+      value !== null &&
+      value !== undefined &&
+      String(value).trim() !== ""
+  );
 
-  const answeredCount =
-    historyEntries.length;
+  const answeredKeys = new Set(
+    historyEntries.map(([key]) => key)
+  );
+
+  const answeredCount = historyEntries.length;
 
   const historyText =
     historyEntries.length > 0
@@ -43,11 +59,10 @@ export default async function handler(req, res) {
           .join("\n")
       : "None yet";
 
-  /*
-   * ---------------------------------------------------------
-   * FALLBACK QUESTIONS
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // FALLBACK QUESTIONS
+  // These are used ONLY when Gemini fails.
+  // =========================================================
 
   const fallbackQuestions = {
     english: [
@@ -62,34 +77,34 @@ export default async function handler(req, res) {
         question:
           "How would you describe the severity of your symptoms?",
         type: "choice",
+        key: "symptom_severity",
         options: [
           "Mild",
           "Moderate",
           "Severe",
         ],
-        key: "symptom_severity",
       },
       {
         question:
           "Are your symptoms getting better, staying the same, or getting worse?",
         type: "choice",
+        key: "symptom_progression",
         options: [
           "Getting better",
           "About the same",
           "Getting worse",
         ],
-        key: "symptom_progression",
       },
       {
         question:
-          "What usually makes your symptoms better or worse?",
+          "What makes your symptoms better or worse?",
         type: "text",
         key: "symptom_triggers",
         options: [],
       },
       {
         question:
-          "Are there any other symptoms happening along with your main complaint?",
+          "Are you experiencing any other symptoms along with your main complaint?",
         type: "text",
         key: "associated_symptoms",
         options: [],
@@ -99,20 +114,14 @@ export default async function handler(req, res) {
           "Are your symptoms affecting your normal daily activities?",
         type: "yesno",
         key: "daily_activity_impact",
-        options: [
-          "Yes",
-          "No",
-        ],
+        options: [],
       },
       {
         question:
           "Have you experienced a similar problem before?",
         type: "yesno",
         key: "previous_episode",
-        options: [
-          "Yes",
-          "No",
-        ],
+        options: [],
       },
       {
         question:
@@ -135,23 +144,23 @@ export default async function handler(req, res) {
         question:
           "आपके लक्षणों की गंभीरता कैसी है?",
         type: "choice",
+        key: "symptom_severity",
         options: [
           "हल्के",
           "मध्यम",
           "गंभीर",
         ],
-        key: "symptom_severity",
       },
       {
         question:
           "आपके लक्षण बेहतर हो रहे हैं, वैसे ही हैं या बदतर हो रहे हैं?",
         type: "choice",
+        key: "symptom_progression",
         options: [
           "बेहतर हो रहे हैं",
           "लगभग समान हैं",
           "बदतर हो रहे हैं",
         ],
-        key: "symptom_progression",
       },
       {
         question:
@@ -172,20 +181,14 @@ export default async function handler(req, res) {
           "क्या आपके लक्षण आपकी सामान्य दैनिक गतिविधियों को प्रभावित कर रहे हैं?",
         type: "yesno",
         key: "daily_activity_impact",
-        options: [
-          "हाँ",
-          "नहीं",
-        ],
+        options: [],
       },
       {
         question:
           "क्या आपको पहले भी ऐसी ही समस्या हुई है?",
         type: "yesno",
         key: "previous_episode",
-        options: [
-          "हाँ",
-          "नहीं",
-        ],
+        options: [],
       },
       {
         question:
@@ -197,46 +200,18 @@ export default async function handler(req, res) {
     ],
   };
 
-  const answeredKeys =
-    new Set(
-      historyEntries.map(
-        ([key]) => key
-      )
-    );
-
-  const fallbackQuestion =
-    fallbackQuestions[
-      selectedLanguage
-    ].find(
+  const getFallbackQuestion = () => {
+    return fallbackQuestions[selectedLanguage].find(
       (question) =>
-        !answeredKeys.has(
-          question.key
-        )
+        !answeredKeys.has(question.key)
     );
+  };
 
-  /*
-   * No API key
-   */
+  const fallbackQuestion = getFallbackQuestion();
 
-  if (!apiKey) {
-    console.warn(
-      "GEMINI_API_KEY missing. Using fallback."
-    );
-
-    return res.status(200).json({
-      chiefComplaint,
-      source: "fallback",
-      followUpQuestions:
-        answeredCount >= 4 ||
-        !fallbackQuestion
-          ? []
-          : [fallbackQuestion],
-    });
-  }
-
-  /*
-   * Maximum 4 questions
-   */
+  // =========================================================
+  // IF INTERVIEW IS COMPLETE
+  // =========================================================
 
   if (answeredCount >= 4) {
     return res.status(200).json({
@@ -246,149 +221,150 @@ export default async function handler(req, res) {
     });
   }
 
-  /*
-   * ---------------------------------------------------------
-   * LANGUAGE INSTRUCTION
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // NO GEMINI API KEY → FALLBACK
+  // =========================================================
+
+  if (!apiKey) {
+    console.warn(
+      "GEMINI_API_KEY missing. Using fallback question."
+    );
+
+    return res.status(200).json({
+      chiefComplaint,
+      source: "fallback",
+      followUpQuestions: fallbackQuestion
+        ? [fallbackQuestion]
+        : [],
+    });
+  }
+
+  // =========================================================
+  // LANGUAGE
+  // =========================================================
 
   const languageInstruction =
     selectedLanguage === "hindi"
       ? `
-LANGUAGE REQUIREMENT:
-
 The patient selected Hindi.
 
-You MUST generate the question in natural,
-easy-to-understand Hindi.
-
-The question text MUST be in Hindi.
-
-Choice options MUST also be in Hindi.
-
-Do NOT return English questions.
-
-Medical terms may remain in commonly understood
-English form only when a natural Hindi equivalent
-would be confusing.
+Generate the question in natural, simple Hindi.
+The question MUST be written in Hindi.
+Options MUST also be written in Hindi.
+Do not return English questions.
 `
       : `
-LANGUAGE REQUIREMENT:
-
 The patient selected English.
 
-You MUST generate the question in clear,
-simple English.
-
-The question text MUST be in English.
-
-Choice options MUST also be in English.
-
-Do NOT return Hindi questions.
+Generate the question in clear, simple English.
+The question MUST be written in English.
+Options MUST also be written in English.
+Do not return Hindi questions.
 `;
 
-  /*
-   * ---------------------------------------------------------
-   * GEMINI PROMPT
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // GEMINI PROMPT
+  // =========================================================
 
   const prompt = `
 You are Clinova, an AI clinical intake assistant.
 
 You are NOT a doctor.
 
-You must NOT diagnose.
-You must NOT prescribe medicines.
-You must NOT recommend treatment.
-
-Your job is to ask ONE useful follow-up question
-during a patient pre-consultation interview.
+Your ONLY job is to ask ONE relevant follow-up
+question based on the patient's symptoms and
+previous answers.
 
 ${languageInstruction}
-
-CARE SYSTEM:
-${careSystem}
 
 PATIENT'S MAIN COMPLAINT:
 "${chiefComplaint}"
 
+CARE SYSTEM:
+${careSystem}
+
 INFORMATION ALREADY COLLECTED:
 ${historyText}
 
-NUMBER OF ANSWERS ALREADY COLLECTED:
+NUMBER OF ANSWERS:
 ${answeredCount}
 
-IMPORTANT:
+ALREADY USED QUESTION KEYS:
+${Array.from(answeredKeys).join(", ") || "None"}
 
-Do NOT repeat information that has already been
-collected.
+IMPORTANT RULES:
 
-Ask only ONE question.
+1. Ask exactly ONE question.
 
-The next question should provide useful information
-for a doctor reviewing the eventual pre-consultation
-report.
+2. Do NOT repeat any information already collected.
 
-Prioritize information such as:
+3. Select the next question intelligently based
+   on the patient's actual complaint.
 
-- duration
-- severity
-- progression
-- associated symptoms
-- triggers or relieving factors
-- effect on daily activities
-- previous similar episodes
-- other directly relevant information
+4. Do NOT blindly follow a fixed question sequence.
 
-Choose the most relevant question based on the
-actual complaint.
+5. Questions should help a doctor understand
+   the patient's complaint.
 
-Do not blindly follow a fixed sequence.
+6. Possible areas include:
+   - duration
+   - severity
+   - progression
+   - associated symptoms
+   - triggers
+   - relieving factors
+   - effect on daily activities
+   - previous similar episodes
+   - relevant history
+
+7. Do NOT diagnose.
+
+8. Do NOT prescribe medicines.
+
+9. Do NOT recommend treatment.
+
+10. Return ONLY valid JSON.
 
 QUESTION TYPES:
 
-1. "text"
+"text"
+For free-form answers.
 
-Use this when the patient needs to type a
-free-form answer.
+"yesno"
+ONLY when the question genuinely requires
+Yes/No.
 
-2. "yesno"
+"choice"
+For 2-5 clear options.
 
-Use this ONLY when the answer genuinely needs
-Yes or No.
-
-3. "choice"
-
-Use this when there are a small number of clear
-options.
-
-For "choice", provide 2 to 5 short options.
-
-IMPORTANT:
-
-Do NOT label every question as "yesno".
-
-For example:
-
-A duration question must be "text".
-
-A severity question should be "choice".
-
-A progression question should usually be "choice".
-
-Return ONLY valid JSON.
-
-Exact format:
+JSON FORMAT:
 
 {
-  "chiefComplaint": "short category name",
+  "chiefComplaint": "short complaint category",
   "followUpQuestions": [
     {
       "question": "one clear question",
       "type": "text",
-      "key": "shortUniqueKey",
+      "key": "unique_question_key",
       "options": []
+    }
+  ]
+}
+
+For choice:
+
+{
+  "chiefComplaint": "short complaint category",
+  "followUpQuestions": [
+    {
+      "question": "one clear question",
+      "type": "choice",
+      "key": "unique_question_key",
+      "options": [
+        "Option 1",
+        "Option 2",
+        "Option 3"
+      ]
     }
   ]
 }
@@ -396,27 +372,13 @@ Exact format:
 For yes/no:
 
 {
-  "chiefComplaint": "short category name",
+  "chiefComplaint": "short complaint category",
   "followUpQuestions": [
     {
       "question": "one clear yes/no question",
       "type": "yesno",
-      "key": "shortUniqueKey",
+      "key": "unique_question_key",
       "options": []
-    }
-  ]
-}
-
-For multiple choice:
-
-{
-  "chiefComplaint": "short category name",
-  "followUpQuestions": [
-    {
-      "question": "one clear question",
-      "type": "choice",
-      "key": "shortUniqueKey",
-      "options": ["Option 1", "Option 2", "Option 3"]
     }
   ]
 }
@@ -425,56 +387,63 @@ Do not include markdown.
 Do not include code fences.
 `;
 
+  // =========================================================
+  // GEMINI REQUEST
+  // =========================================================
+
   try {
-    const response =
-      await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+        headers: {
+          "Content-Type": "application/json",
+        },
 
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: prompt,
-                  },
-                ],
-              },
-            ],
-
-            generationConfig: {
-              temperature: 0.4,
-              responseMimeType:
-                "application/json",
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
             },
-          }),
-        }
-      );
+          ],
 
-    const data =
-      await response.json();
+          generationConfig: {
+            temperature: 0.4,
+            responseMimeType: "application/json",
+          },
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    // =======================================================
+    // GEMINI ERROR → FALLBACK
+    // =======================================================
 
     if (!response.ok) {
       console.error(
-        "GEMINI ACTUAL ERROR:",
+        "Gemini API error:",
         data
       );
 
       return res.status(200).json({
         chiefComplaint,
         source: "fallback",
-        followUpQuestions:
-          fallbackQuestion
-            ? [fallbackQuestion]
-            : [],
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
       });
     }
+
+    // =======================================================
+    // GET GEMINI TEXT
+    // =======================================================
 
     const rawText =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -487,31 +456,26 @@ Do not include code fences.
       return res.status(200).json({
         chiefComplaint,
         source: "fallback",
-        followUpQuestions:
-          fallbackQuestion
-            ? [fallbackQuestion]
-            : [],
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
       });
     }
 
-    const cleaned =
-      rawText
-        .replace(
-          /```json/gi,
-          ""
-        )
-        .replace(
-          /```/g,
-          ""
-        )
-        .trim();
+    // =======================================================
+    // PARSE JSON
+    // =======================================================
+
+    const cleaned = rawText
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
 
     let parsed;
 
     try {
-      parsed =
-        JSON.parse(cleaned);
-    } catch (parseError) {
+      parsed = JSON.parse(cleaned);
+    } catch (error) {
       console.error(
         "Gemini JSON parse error:",
         cleaned
@@ -520,32 +484,63 @@ Do not include code fences.
       return res.status(200).json({
         chiefComplaint,
         source: "fallback",
-        followUpQuestions:
-          fallbackQuestion
-            ? [fallbackQuestion]
-            : [],
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
       });
     }
 
+    // =======================================================
+    // VALIDATE GEMINI QUESTION
+    // =======================================================
+
     if (
-      !Array.isArray(
-        parsed.followUpQuestions
-      ) ||
-      parsed.followUpQuestions
-        .length === 0
+      !Array.isArray(parsed.followUpQuestions) ||
+      parsed.followUpQuestions.length === 0
     ) {
       return res.status(200).json({
         chiefComplaint,
         source: "fallback",
-        followUpQuestions:
-          fallbackQuestion
-            ? [fallbackQuestion]
-            : [],
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
       });
     }
 
     const question =
       parsed.followUpQuestions[0];
+
+    if (
+      !question ||
+      !question.question ||
+      !question.key
+    ) {
+      return res.status(200).json({
+        chiefComplaint,
+        source: "fallback",
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
+      });
+    }
+
+    // =======================================================
+    // PREVENT DUPLICATE QUESTION KEY
+    // =======================================================
+
+    if (answeredKeys.has(question.key)) {
+      return res.status(200).json({
+        chiefComplaint,
+        source: "fallback",
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
+      });
+    }
+
+    // =======================================================
+    // VALIDATE TYPE
+    // =======================================================
 
     const allowedTypes = [
       "text",
@@ -554,99 +549,79 @@ Do not include code fences.
     ];
 
     if (
-      !allowedTypes.includes(
-        question.type
-      )
+      !allowedTypes.includes(question.type)
     ) {
       question.type = "text";
     }
 
-    if (
-      question.type === "choice"
-    ) {
+    // =======================================================
+    // VALIDATE OPTIONS
+    // =======================================================
+
+    if (question.type === "choice") {
       if (
-        !Array.isArray(
-          question.options
-        ) ||
-        question.options.length < 2
+        !Array.isArray(question.options) ||
+        question.options.length < 2 ||
+        question.options.length > 5
       ) {
-        question.type = "text";
-        question.options = [];
+        return res.status(200).json({
+          chiefComplaint,
+          source: "fallback",
+          followUpQuestions: fallbackQuestion
+            ? [fallbackQuestion]
+            : [],
+        });
       }
     } else {
       question.options = [];
     }
 
+    // =======================================================
+    // LANGUAGE VALIDATION
+    // =======================================================
+
+    const questionText =
+      String(question.question);
+
+    const hasHindi =
+      /[\u0900-\u097F]/.test(
+        questionText
+      );
+
     if (
-      !question.key ||
-      answeredKeys.has(
-        question.key
-      )
+      selectedLanguage === "hindi" &&
+      !hasHindi
     ) {
       return res.status(200).json({
         chiefComplaint,
         source: "fallback",
-        followUpQuestions:
-          fallbackQuestion
-            ? [fallbackQuestion]
-            : [],
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
       });
     }
 
-    /*
-     * Extra language protection.
-     *
-     * If Hindi was selected but Gemini somehow
-     * returns an obviously English question,
-     * fallback to Hindi.
-     *
-     * Same for English.
-     */
-
-    const questionText =
-      String(
-        question.question || ""
-      );
-
     if (
-      selectedLanguage === "hindi"
+      selectedLanguage === "english" &&
+      hasHindi
     ) {
-      const hasHindi =
-        /[\u0900-\u097F]/.test(
-          questionText
-        );
-
-      if (!hasHindi) {
-        return res.status(200).json({
-          chiefComplaint,
-          source: "fallback",
-          followUpQuestions:
-            fallbackQuestion
-              ? [fallbackQuestion]
-              : [],
-        });
-      }
+      return res.status(200).json({
+        chiefComplaint,
+        source: "fallback",
+        followUpQuestions: fallbackQuestion
+          ? [fallbackQuestion]
+          : [],
+      });
     }
 
-    if (
-      selectedLanguage === "english"
-    ) {
-      const hasHindi =
-        /[\u0900-\u097F]/.test(
-          questionText
-        );
+    // =======================================================
+    // GEMINI SUCCESS
+    // =======================================================
 
-      if (hasHindi) {
-        return res.status(200).json({
-          chiefComplaint,
-          source: "fallback",
-          followUpQuestions:
-            fallbackQuestion
-              ? [fallbackQuestion]
-              : [],
-        });
-      }
-    }
+    console.log(
+      "Gemini generated adaptive question:",
+      question
+    );
 
     return res.status(200).json({
       chiefComplaint:
@@ -657,36 +632,30 @@ Do not include code fences.
 
       followUpQuestions: [
         {
-          question:
-            question.question ||
-            fallbackQuestion?.question ||
-            "Please describe your symptoms.",
-
+          question: question.question,
           type: question.type,
-
-          key:
-            question.key ||
-            fallbackQuestion?.key ||
-            `question_${Date.now()}`,
-
-          options:
-            question.options || [],
+          key: question.key,
+          options: question.options || [],
         },
       ],
     });
+
   } catch (error) {
+    // =======================================================
+    // NETWORK / SERVER ERROR → FALLBACK
+    // =======================================================
+
     console.error(
-      "Adaptive question handler error:",
+      "Adaptive question error:",
       error
     );
 
     return res.status(200).json({
       chiefComplaint,
       source: "fallback",
-      followUpQuestions:
-        fallbackQuestion
-          ? [fallbackQuestion]
-          : [],
+      followUpQuestions: fallbackQuestion
+        ? [fallbackQuestion]
+        : [],
     });
   }
 }
