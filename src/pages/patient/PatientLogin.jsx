@@ -32,61 +32,76 @@ export default function PatientLogin() {
 
       const patientId = result.user.uid;
 
+      console.log("Firebase login successful:", patientId);
+
       // Get patient profile from Firestore
       const patientRef = doc(db, "patients", patientId);
       const patientSnap = await getDoc(patientRef);
 
       if (!patientSnap.exists()) {
         setError(
-          "Patient profile not found. Please contact support."
+          "Login successful, but patient profile was not found. Please contact support."
         );
         return;
       }
 
       const patientData = patientSnap.data();
 
+      console.log("Patient profile loaded:", patientData);
+
       // Save patient ID
       localStorage.setItem("clinovaPatientId", patientId);
 
-      // Save profile locally if available
-      if (
-        patientData.name ||
-        patientData.age ||
-        patientData.phone
-      ) {
-        localStorage.setItem(
-          "clinovaPatient",
-          JSON.stringify({
-            name: patientData.name || "",
-            age: patientData.age || "",
-            phone: patientData.phone || "",
-          })
-        );
-      }
+      // Save patient profile locally
+      localStorage.setItem(
+        "clinovaPatient",
+        JSON.stringify({
+          name: patientData.name || "",
+          age: patientData.age || "",
+          phone: patientData.phone || "",
+        })
+      );
 
-      // Remember whether profile is already complete.
-      // Consent page will decide whether to open
-      // Identification or Dashboard.
+      // Save profile completion status
       localStorage.setItem(
         "clinovaProfileComplete",
         patientData.profileComplete === true ? "true" : "false"
       );
 
-      // IMPORTANT:
-      // Do NOT directly open dashboard anymore.
-      // Every patient goes through language selection first.
+      // Every patient goes through language selection
       navigate("/language");
+
     } catch (err) {
+      // Show exact Firebase error in browser console
+      console.error("========== FIREBASE LOGIN ERROR ==========");
+      console.error("Error Code:", err?.code);
+      console.error("Error Message:", err?.message);
+      console.error("Full Error:", err);
+      console.error("==========================================");
+
+      // User-friendly messages
       if (
-        err.code === "auth/invalid-credential" ||
-        err.code === "auth/user-not-found" ||
-        err.code === "auth/wrong-password"
+        err?.code === "auth/invalid-credential" ||
+        err?.code === "auth/user-not-found" ||
+        err?.code === "auth/wrong-password"
       ) {
         setError("Invalid email or password.");
-      } else if (err.code === "auth/invalid-email") {
+      } else if (err?.code === "auth/invalid-email") {
         setError("Please enter a valid email address.");
+      } else if (err?.code === "auth/user-disabled") {
+        setError("This account has been disabled.");
+      } else if (err?.code === "auth/too-many-requests") {
+        setError("Too many login attempts. Please try again later.");
+      } else if (err?.code === "auth/operation-not-allowed") {
+        setError(
+          "Email/Password login is disabled in Firebase Authentication."
+        );
+      } else if (err?.code === "auth/network-request-failed") {
+        setError("Network error. Please check your internet connection.");
       } else {
-        setError(err.message);
+        setError(
+          err?.message || "Login failed. Please try again."
+        );
       }
     } finally {
       setLoading(false);
