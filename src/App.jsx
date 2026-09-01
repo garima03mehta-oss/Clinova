@@ -20,7 +20,7 @@ import CareSystemSelection from "./pages/patient/CareSystemSelection";
 
 import Interview from "./pages/patient/Interview/Interview";
 
-import DocumentUpload from "./pages/patient/documents/DocumentUpload";
+import DocumentUpload from "./pages/patient/Documents/DocumentUpload";
 import Timeline from "./pages/patient/Documents/Timeline";
 
 import HealthRecord from "./pages/patient/HealthRecord";
@@ -34,33 +34,33 @@ import PreReport from "./pages/patient/PreReport";
 // ========================================
 // DOCTOR
 // ========================================
-import DoctorLogin from "./pages/doctor/DoctorLogin";
-import DoctorRegister from "./pages/doctor/DoctorRegister";
+import DoctorLogin from "./pages//Doctor/DoctorLogin";
+import DoctorRegister from "./pages/Doctor/DoctorRegister";
 
-import EnterAccessCode from "./pages/doctor/EnterAccessCode";
-import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import EnterAccessCode from "./pages/Doctor/EnterAccessCode";
+import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
 
-import PatientQueue from "./pages/doctor/PatientQueue";
-import AttentionLayer from "./pages/doctor/AttentionLayer";
+import PatientQueue from "./pages/Doctor/PatientQueue";
+import AttentionLayer from "./pages/Doctor/AttentionLayer";
 
-import ClinicalSummary from "./pages/doctor/ClinicalSummary";
-import DoctorVerification from "./pages/doctor/DoctorVerification";
+import ClinicalSummary from "./pages/Doctor/ClinicalSummary";
+import DoctorVerification from "./pages/Doctor/DoctorVerification";
 
-import EmergencyAccess from "./pages/doctor/EmergencyAccess";
-import AuditLog from "./pages/doctor/AuditLog";
+import EmergencyAccess from "./pages/Doctor/EmergencyAccess";
+import AuditLog from "./pages/Doctor/AuditLog";
 
-import PatientWorkspace from "./pages/doctor/PatientWorkspace";
-import DoctorPatientRecord from "./pages/doctor/DoctorPatientRecord";
+import PatientWorkspace from "./pages/Doctor/PatientWorkspace";
+import DoctorPatientRecord from "./pages/Doctor/DoctorPatientRecord";
 
-import HealthTrends from "./pages/doctor/HealthTrends";
+import HealthTrends from "./pages/Doctor/HealthTrends";
 
 // ========================================
 // DOCTOR BILLING
 // ========================================
-import BillingDashboard from "./pages/doctor/billing/BillingDashboard";
-import CreateBill from "./pages/doctor/billing/CreateBill";
-import BillDetails from "./pages/doctor/billing/BillDetails";
-import ExpenseManagement from "./pages/doctor/billing/ExpenseManagement";
+import BillingDashboard from "./pages/Doctor/billing/BillingDashboard";
+import CreateBill from "./pages/Doctor/billing/CreateBill";
+import BillDetails from "./pages/Doctor/billing/BillDetails";
+import ExpenseManagement from "./pages/Doctor/billing/ExpenseManagement";
 
 
 function App() {
