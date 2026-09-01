@@ -18,10 +18,10 @@ import Consent from "./pages/patient/Consent";
 import Identification from "./pages/patient/Identification";
 import CareSystemSelection from "./pages/patient/CareSystemSelection";
 
-import Interview from "./pages/patient/interview/Interview";
+import Interview from "./pages/patient/Interview/Interview";
 
 import DocumentUpload from "./pages/patient/documents/DocumentUpload";
-import Timeline from "./pages/patient/documents/Timeline";
+import Timeline from "./pages/patient/Documents/Timeline";
 
 import HealthRecord from "./pages/patient/HealthRecord";
 import RecordSearch from "./pages/patient/RecordSearch";
@@ -138,7 +138,7 @@ function App() {
         />
 
         <Route
-          path="/interview"
+          path="/Interview"
           element={<Interview />}
         />
 
@@ -148,7 +148,7 @@ function App() {
         ======================================== */}
 
         <Route
-          path="/documents"
+          path="/Documents"
           element={<DocumentUpload />}
         />
 
