@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../../firebase/config";
+
 import {
   extractDocumentInfo,
   explainDocument,
@@ -20,9 +21,7 @@ export default function DocumentUpload() {
   const handleFileChange = (event) => {
     const selectedFile = event.target.files?.[0];
 
-    if (!selectedFile) {
-      return;
-    }
+    if (!selectedFile) return;
 
     setFile(selectedFile);
     setExtracted(null);
@@ -31,9 +30,7 @@ export default function DocumentUpload() {
 
   const handleUpload = async () => {
     if (!file) {
-      setError(
-        "Please select a medical document first."
-      );
+      setError("Please select a medical document first.");
       return;
     }
 
@@ -41,38 +38,21 @@ export default function DocumentUpload() {
     setError("");
 
     try {
-      console.log(
-        "Sending actual document to AI:",
-        file.name
-      );
+      console.log("Sending document to AI:", file.name);
 
-      // Send actual File object
-      const extractedData =
-        await extractDocumentInfo(file);
+      const extractedData = await extractDocumentInfo(file);
 
-      console.log(
-        "AI extracted document:",
-        extractedData
-      );
+      console.log("AI extracted document:", extractedData);
 
       setExtracted(extractedData);
 
-      /*
-       * Save extracted document information locally
-       * so PreReport can use it.
-       */
       localStorage.setItem(
         "clinovaDocuments",
         JSON.stringify([extractedData])
       );
 
-      /*
-       * Save to Firestore when patient ID exists.
-       */
       const patientId =
-        localStorage.getItem(
-          "clinovaPatientId"
-        );
+        localStorage.getItem("clinovaPatientId");
 
       if (patientId) {
         const safeName = file.name
@@ -93,16 +73,12 @@ export default function DocumentUpload() {
             fileName: file.name,
             fileType: file.type,
             fileSize: file.size,
-
             ...extractedData,
-
             uploadedAt: Date.now(),
           }
         );
 
-        console.log(
-          "Document saved to Firestore."
-        );
+        console.log("Document saved to Firestore.");
       }
     } catch (err) {
       console.error(
@@ -124,10 +100,6 @@ export default function DocumentUpload() {
   };
 
   const skipDocuments = () => {
-    /*
-     * Make sure pre-report knows that
-     * documents are optional.
-     */
     localStorage.setItem(
       "clinovaDocuments",
       JSON.stringify([])
@@ -137,7 +109,6 @@ export default function DocumentUpload() {
   };
 
   return (
-fix/gemini-context-and-min-questions
     <div
       style={{
         minHeight: "100vh",
@@ -157,8 +128,6 @@ fix/gemini-context-and-min-questions
             "0 4px 20px rgba(0,0,0,0.06)",
         }}
       >
-        {/* HEADER */}
-
         <p
           style={{
             color: "#0E6E64",
@@ -260,13 +229,10 @@ fix/gemini-context-and-min-questions
                 padding: "12px",
                 background: "#FFFFFF",
                 borderRadius: "10px",
-                border:
-                  "1px solid #D1D5DB",
+                border: "1px solid #D1D5DB",
               }}
             >
-              <strong>
-                {file.name}
-              </strong>
+              <strong>{file.name}</strong>
 
               <div
                 style={{
@@ -290,8 +256,7 @@ fix/gemini-context-and-min-questions
               padding: "14px",
               borderRadius: "10px",
               background: "#FEF2F2",
-              border:
-                "1px solid #FCA5A5",
+              border: "1px solid #FCA5A5",
               color: "#B91C1C",
             }}
           >
@@ -299,7 +264,7 @@ fix/gemini-context-and-min-questions
           </div>
         )}
 
-        {/* UPLOAD */}
+        {/* UPLOAD BUTTON */}
 
         <button
           onClick={handleUpload}
@@ -337,8 +302,7 @@ fix/gemini-context-and-min-questions
               padding: "24px",
               borderRadius: "16px",
               background: "#F9FAFB",
-              border:
-                "1px solid #E5E7EB",
+              border: "1px solid #E5E7EB",
             }}
           >
             <span
@@ -393,15 +357,15 @@ fix/gemini-context-and-min-questions
               </p>
             )}
 
+            {/* CLINICAL INDICATION */}
+
             {extracted.clinicalIndication && (
               <div
                 style={{
                   marginTop: "18px",
                 }}
               >
-                <h3>
-                  Clinical Indication
-                </h3>
+                <h3>Clinical Indication</h3>
 
                 <p
                   style={{
@@ -418,22 +382,16 @@ fix/gemini-context-and-min-questions
             {Array.isArray(
               extracted.investigations
             ) &&
-              extracted.investigations.length >
-                0 && (
+              extracted.investigations.length > 0 && (
                 <div
                   style={{
                     marginTop: "24px",
                   }}
                 >
-                  <h3>
-                    Investigations
-                  </h3>
+                  <h3>Investigations</h3>
 
                   {extracted.investigations.map(
-                    (
-                      investigation,
-                      index
-                    ) => (
+                    (investigation, index) => (
                       <div
                         key={
                           investigation.name ||
@@ -443,10 +401,8 @@ fix/gemini-context-and-min-questions
                           padding: "14px",
                           marginTop: "8px",
                           borderRadius: "10px",
-                          background:
-                            "#FFFFFF",
-                          border:
-                            "1px solid #E5E7EB",
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
                         }}
                       >
                         <div
@@ -465,15 +421,11 @@ fix/gemini-context-and-min-questions
                           {investigation.flag && (
                             <span
                               style={{
-                                fontSize:
-                                  "12px",
-                                fontWeight:
-                                  "700",
+                                fontSize: "12px",
+                                fontWeight: "700",
                               }}
                             >
-                              {
-                                investigation.flag
-                              }
+                              {investigation.flag}
                             </span>
                           )}
                         </div>
@@ -486,18 +438,12 @@ fix/gemini-context-and-min-questions
                             "" && (
                             <p
                               style={{
-                                margin:
-                                  "6px 0 0",
-                                color:
-                                  "#4B5563",
+                                margin: "6px 0 0",
+                                color: "#4B5563",
                               }}
                             >
-                              <strong>
-                                Value:
-                              </strong>{" "}
-                              {
-                                investigation.value
-                              }
+                              <strong>Value:</strong>{" "}
+                              {investigation.value}
 
                               {investigation.unit
                                 ? ` ${investigation.unit}`
@@ -508,12 +454,9 @@ fix/gemini-context-and-min-questions
                         {investigation.referenceRange && (
                           <p
                             style={{
-                              margin:
-                                "4px 0 0",
-                              color:
-                                "#6B7280",
-                              fontSize:
-                                "13px",
+                              margin: "4px 0 0",
+                              color: "#6B7280",
+                              fontSize: "13px",
                             }}
                           >
                             Reference Range:{" "}
@@ -530,11 +473,8 @@ fix/gemini-context-and-min-questions
 
             {/* FINDINGS */}
 
-            {Array.isArray(
-              extracted.findings
-            ) &&
-              extracted.findings.length >
-                0 && (
+            {Array.isArray(extracted.findings) &&
+              extracted.findings.length > 0 && (
                 <div
                   style={{
                     marginTop: "24px",
@@ -566,8 +506,7 @@ fix/gemini-context-and-min-questions
                   marginTop: "24px",
                   padding: "14px",
                   borderRadius: "12px",
-                  background:
-                    "#F3F4F6",
+                  background: "#F3F4F6",
                 }}
               >
                 <h3>Impression</h3>
@@ -585,11 +524,8 @@ fix/gemini-context-and-min-questions
 
             {/* MEDICATIONS */}
 
-            {Array.isArray(
-              extracted.medications
-            ) &&
-              extracted.medications.length >
-                0 && (
+            {Array.isArray(extracted.medications) &&
+              extracted.medications.length > 0 && (
                 <div
                   style={{
                     marginTop: "24px",
@@ -604,41 +540,32 @@ fix/gemini-context-and-min-questions
                         style={{
                           padding: "12px",
                           marginTop: "8px",
-                          borderRadius:
-                            "10px",
-                          background:
-                            "#FFFFFF",
-                          border:
-                            "1px solid #E5E7EB",
+                          borderRadius: "10px",
+                          background: "#FFFFFF",
+                          border: "1px solid #E5E7EB",
                         }}
                       >
                         <strong>
-                          {medicine.name ||
-                            "Medicine"}
+                          {medicine.name || "Medicine"}
                         </strong>
 
                         {medicine.dose && (
                           <div>
-                            Dose:{" "}
-                            {medicine.dose}
+                            Dose: {medicine.dose}
                           </div>
                         )}
 
                         {medicine.frequency && (
                           <div>
                             Frequency:{" "}
-                            {
-                              medicine.frequency
-                            }
+                            {medicine.frequency}
                           </div>
                         )}
 
                         {medicine.duration && (
                           <div>
                             Duration:{" "}
-                            {
-                              medicine.duration
-                            }
+                            {medicine.duration}
                           </div>
                         )}
                       </div>
@@ -649,19 +576,14 @@ fix/gemini-context-and-min-questions
 
             {/* DIAGNOSIS */}
 
-            {Array.isArray(
-              extracted.diagnosis
-            ) &&
-              extracted.diagnosis.length >
-                0 && (
+            {Array.isArray(extracted.diagnosis) &&
+              extracted.diagnosis.length > 0 && (
                 <div
                   style={{
                     marginTop: "24px",
                   }}
                 >
-                  <h3>
-                    Diagnosis / Impression
-                  </h3>
+                  <h3>Diagnosis / Impression</h3>
 
                   <ul
                     style={{
@@ -684,16 +606,13 @@ fix/gemini-context-and-min-questions
             {Array.isArray(
               extracted.recommendations
             ) &&
-              extracted.recommendations.length >
-                0 && (
+              extracted.recommendations.length > 0 && (
                 <div
                   style={{
                     marginTop: "24px",
                   }}
                 >
-                  <h3>
-                    Recommendations
-                  </h3>
+                  <h3>Recommendations</h3>
 
                   <ul
                     style={{
@@ -732,9 +651,7 @@ fix/gemini-context-and-min-questions
                   marginBottom: 0,
                 }}
               >
-                {explainDocument(
-                  extracted
-                )}
+                {explainDocument(extracted)}
               </p>
             </div>
           </div>
@@ -771,8 +688,7 @@ fix/gemini-context-and-min-questions
               width: "100%",
               marginTop: "12px",
               padding: "14px",
-              border:
-                "1px solid #0E6E64",
+              border: "1px solid #0E6E64",
               borderRadius: "12px",
               background: "#FFFFFF",
               color: "#0E6E64",
@@ -799,28 +715,6 @@ fix/gemini-context-and-min-questions
           professional.
         </p>
       </div>
-
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>Clinical Interview</h1>
-      <p>History Completeness: {completeness}%</p>
-      {priorityAlert && <p style={{ color: "red", fontWeight: "bold" }}>⚠️ {priorityAlert}</p>}
-      <p>{currentQuestion}</p>
-      <button onClick={() => handleAnswer("breathingDifficulty", true)}>Yes</button>
-      <button onClick={() => handleAnswer("breathingDifficulty", false)}>No</button>
-
-      {extracted && (
-      <div className="mt-6 bg-surface rounded-2xl shadow-sm border border-gray-100 p-6 text-left">
-      <StatusBadge status={extracted.status} label={extracted.status === "DRAFT" ? "AI Draft — Unverified" : "Verified"} />
-      <p className="font-display text-lg text-text mt-4">{extracted.documentType}</p>
-      <p className="text-text-muted text-sm mt-1">Date: {extracted.date}</p>
-      <p className="text-text-muted text-sm">Hospital: {extracted.hospital}</p>
-      <p className="text-accent text-xs mt-4 italic">{explainDocument(extracted)}</p>
-      </div>
-      )}
-
-      (add import StatusBadge from "../../../components/StatusBadge"; at top)
-
- main
     </div>
   );
 }

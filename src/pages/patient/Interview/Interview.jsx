@@ -25,9 +25,7 @@ export default function Interview() {
     ...answers,
   });
 
-  // -----------------------------------
   // START AI INTERVIEW
-  // -----------------------------------
   const startInterview = async () => {
     if (!symptomText.trim()) {
       setError("Please describe your symptoms first.");
@@ -70,9 +68,7 @@ export default function Interview() {
     }
   };
 
-  // -----------------------------------
   // HANDLE ANSWER
-  // -----------------------------------
   const handleAnswer = async (value) => {
     if (!currentQuestion || loading) return;
 
@@ -81,8 +77,7 @@ export default function Interview() {
 
     try {
       const questionKey =
-        currentQuestion.key ||
-        `question_${questionCount}`;
+        currentQuestion.key || `question_${questionCount}`;
 
       const updatedAnswers = {
         ...answers,
@@ -97,7 +92,6 @@ export default function Interview() {
       setAnswers(updatedAnswers);
       setHistory(updatedHistory);
 
-      // Priority check
       const priority = checkPriority({
         chestPain: symptomText
           .toLowerCase()
@@ -109,22 +103,12 @@ export default function Interview() {
         setPriorityAlert(priority.reason);
       }
 
-      // -----------------------------------
-      // IMPORTANT:
-      // If this was the 3rd question,
-      // DO NOT CALL GEMINI AGAIN.
-      // -----------------------------------
+      // Maximum 3 AI questions
       if (questionCount >= 3) {
-        await finishInterview(
-          updatedHistory,
-          priority
-        );
+        await finishInterview(updatedHistory, priority);
         return;
       }
 
-      // -----------------------------------
-      // Generate next adaptive question
-      // -----------------------------------
       const data = await getAIQuestions(
         symptomText.trim(),
         updatedHistory
@@ -135,7 +119,6 @@ export default function Interview() {
       const nextQuestion =
         data?.followUpQuestions?.[0];
 
-      // If Gemini says no more questions
       if (!nextQuestion) {
         await finishInterview(
           updatedHistory,
@@ -144,10 +127,8 @@ export default function Interview() {
         return;
       }
 
-      const nextCount = questionCount + 1;
-
       setCurrentQuestion(nextQuestion);
-      setQuestionCount(nextCount);
+      setQuestionCount(questionCount + 1);
     } catch (err) {
       console.error(
         "Adaptive Question Error:",
@@ -163,9 +144,7 @@ export default function Interview() {
     }
   };
 
-  // -----------------------------------
   // FINISH INTERVIEW
-  // -----------------------------------
   const finishInterview = async (
     finalHistory,
     priority
@@ -209,10 +188,7 @@ export default function Interview() {
         );
       }
 
-      // Stop showing questions
       setCurrentQuestion(null);
-
-      // Show completion screen
       setInterviewCompleted(true);
     } catch (err) {
       console.error(
@@ -226,9 +202,7 @@ export default function Interview() {
     }
   };
 
-  // -----------------------------------
-  // INTERVIEW COMPLETED SCREEN
-  // -----------------------------------
+  // INTERVIEW COMPLETION SCREEN
   if (interviewCompleted) {
     return (
       <div
@@ -282,44 +256,11 @@ export default function Interview() {
             style={{
               color: "#6B7280",
               lineHeight: 1.7,
-              fontSize: "16px",
             }}
           >
             Your symptoms and answers have been
             recorded successfully.
           </p>
-
-          <div
-            style={{
-              marginTop: "24px",
-              padding: "18px",
-              borderRadius: "14px",
-              background: "#E4F2F0",
-              textAlign: "left",
-            }}
-          >
-            <strong
-              style={{
-                color: "#084C44",
-              }}
-            >
-              What happens next?
-            </strong>
-
-            <p
-              style={{
-                color: "#4B5563",
-                lineHeight: 1.6,
-                marginBottom: 0,
-              }}
-            >
-              You can now attach your medical
-              reports and documents. Clinova will
-              use your interview information and
-              uploaded records to prepare your
-              AI-generated pre-consultation report.
-            </p>
-          </div>
 
           {priorityAlert && (
             <div
@@ -414,11 +355,8 @@ export default function Interview() {
     );
   }
 
-  // -----------------------------------
   // MAIN INTERVIEW UI
-  // -----------------------------------
   return (
- fix/gemini-context-and-min-questions
     <div
       style={{
         minHeight: "100vh",
@@ -456,82 +394,78 @@ export default function Interview() {
           }}
         >
           Tell Clinova what you are experiencing.
-          Your questions will adapt to your
-          symptoms.
+          Your questions will adapt to your symptoms.
         </p>
 
-        {/* SYMPTOM INPUT */}
-        {!currentQuestion &&
-          !interviewCompleted && (
-            <>
-              <label
+        {!currentQuestion && (
+          <>
+            <label
+              style={{
+                display: "block",
+                marginTop: "24px",
+                marginBottom: "8px",
+                fontWeight: "600",
+              }}
+            >
+              What symptoms are you experiencing?
+            </label>
+
+            <textarea
+              value={symptomText}
+              onChange={(e) =>
+                setSymptomText(e.target.value)
+              }
+              placeholder="Example: I have fever and headache since yesterday..."
+              rows={5}
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "14px",
+                border: "1px solid #E5E7EB",
+                borderRadius: "12px",
+                resize: "vertical",
+                fontSize: "15px",
+                boxSizing: "border-box",
+              }}
+            />
+
+            {error && (
+              <p
                 style={{
-                  display: "block",
-                  marginTop: "24px",
-                  marginBottom: "8px",
-                  fontWeight: "600",
+                  color: "#DC2626",
+                  marginTop: "12px",
                 }}
               >
-                What symptoms are you experiencing?
-              </label>
+                {error}
+              </p>
+            )}
 
-              <textarea
-                value={symptomText}
-                onChange={(e) =>
-                  setSymptomText(e.target.value)
-                }
-                placeholder="Example: I have fever and headache since yesterday..."
-                rows={5}
-                style={{
-                  width: "100%",
-                  padding: "14px",
-                  border:
-                    "1px solid #E5E7EB",
-                  borderRadius: "12px",
-                  resize: "vertical",
-                  fontSize: "15px",
-                  boxSizing: "border-box",
-                }}
-              />
+            <button
+              onClick={startInterview}
+              disabled={loading}
+              style={{
+                width: "100%",
+                marginTop: "16px",
+                padding: "14px",
+                border: "none",
+                borderRadius: "12px",
+                background: "#0E6E64",
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: loading
+                  ? "not-allowed"
+                  : "pointer",
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading
+                ? "Generating..."
+                : "Start AI Interview"}
+            </button>
+          </>
+        )}
 
-              {error && (
-                <p
-                  style={{
-                    color: "#DC2626",
-                    marginTop: "12px",
-                  }}
-                >
-                  {error}
-                </p>
-              )}
-
-              <button
-                onClick={startInterview}
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  marginTop: "16px",
-                  padding: "14px",
-                  border: "none",
-                  borderRadius: "12px",
-                  background: "#0E6E64",
-                  color: "white",
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  cursor: loading
-                    ? "not-allowed"
-                    : "pointer",
-                  opacity: loading ? 0.7 : 1,
-                }}
-              >
-                {loading
-                  ? "Generating..."
-                  : "Start AI Interview"}
-              </button>
-            </>
-          )}
-
-        {/* AI QUESTION */}
         {currentQuestion && (
           <>
             <div
@@ -559,8 +493,7 @@ export default function Interview() {
                 <div
                   style={{
                     width: `${Math.min(
-                      (questionCount / 3) *
-                        100,
+                      (questionCount / 3) * 100,
                       100
                     )}%`,
                     height: "100%",
@@ -587,8 +520,7 @@ export default function Interview() {
               <div
                 style={{
                   background: "#FEF2F2",
-                  border:
-                    "1px solid #DC2626",
+                  border: "1px solid #DC2626",
                   borderRadius: "12px",
                   padding: "12px",
                   marginTop: "16px",
@@ -633,14 +565,11 @@ export default function Interview() {
                   flex: 1,
                   padding: "14px",
                   borderRadius: "12px",
-                  border:
-                    "2px solid #0E6E64",
+                  border: "2px solid #0E6E64",
                   background: "#0E6E64",
                   color: "white",
                   fontWeight: "600",
-                  cursor: loading
-                    ? "not-allowed"
-                    : "pointer",
+                  cursor: "pointer",
                 }}
               >
                 Yes
@@ -655,14 +584,11 @@ export default function Interview() {
                   flex: 1,
                   padding: "14px",
                   borderRadius: "12px",
-                  border:
-                    "2px solid #0E6E64",
+                  border: "2px solid #0E6E64",
                   background: "white",
                   color: "#0E6E64",
                   fontWeight: "600",
-                  cursor: loading
-                    ? "not-allowed"
-                    : "pointer",
+                  cursor: "pointer",
                 }}
               >
                 No
@@ -689,38 +615,10 @@ export default function Interview() {
                 fontSize: "13px",
               }}
             >
-              History completeness:{" "}
-              {completeness}%
+              History completeness: {completeness}%
             </p>
           </>
         )}
-        
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>Clinical Interview</h1>
-      <p>History Completeness: {completeness}%</p>
-      {priorityAlert && <p style={{ color: "red", fontWeight: "bold" }}>⚠️ {priorityAlert}</p>}
-      <p>{currentQuestion}</p>
-      <button onClick={() => handleAnswer("breathingDifficulty", true)}>Yes</button>
-      <button onClick={() => handleAnswer("breathingDifficulty", false)}>No</button>
-      
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bg font-body">
-      <div className="w-full max-w-md bg-surface rounded-2xl shadow-sm border border-gray-100 p-8">
-      <p className="text-text-muted text-xs font-mono mb-4">Completeness: {completeness}%</p>
-      <div className="w-full bg-gray-100 rounded-full h-2 mb-6">
-      <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${completeness}%` }} />
-      </div>
-      {priorityAlert && (
-      <div className="bg-red-50 border border-danger rounded-xl p-3 mb-4">
-        <p className="text-danger text-sm font-medium">⚠️ {priorityAlert}</p>
-      </div>
-      )}
-      <p className="font-display text-xl text-text mb-6">{currentQuestion}</p>
-      <div className="flex gap-3">
-      <button onClick={() => handleAnswer("breathingDifficulty", true)} className="flex-1 bg-primary text-white py-3 rounded-xl">Yes</button>
-      <button onClick={() => handleAnswer("breathingDifficulty", false)} className="flex-1 bg-surface border-2 border-primary text-primary py-3 rounded-xl">No</button>
-      </div>
-      </div>
- main
       </div>
     </div>
   );
